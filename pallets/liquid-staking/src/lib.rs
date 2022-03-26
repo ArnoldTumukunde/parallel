@@ -178,6 +178,7 @@ pub mod pallet {
             + BlockNumberProvider<BlockNumber = BlockNumberFor<Self>>;
 
         /// The relaychain's Validation data's expiration time
+        #[pallet::constant]
         type RelayChainValidationDataExpiresIn: Get<BlockNumberFor<Self>>;
 
         /// To expose XCM helper functions
