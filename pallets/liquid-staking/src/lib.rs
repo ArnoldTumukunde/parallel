@@ -38,7 +38,10 @@ use primitives::{
     ExchangeRateProvider, LiquidStakingConvert, LiquidStakingCurrenciesProvider,
     PersistedValidationData, Rate, ValidationDataProvider,
 };
-use sp_runtime::{traits::Zero, FixedPointNumber, FixedPointOperand};
+use sp_runtime::{
+    traits::{Saturating, Zero},
+    FixedPointNumber, FixedPointOperand,
+};
 
 pub use pallet::*;
 
@@ -170,9 +173,12 @@ pub mod pallet {
         #[pallet::constant]
         type NumSlashingSpans: Get<u32>;
 
-        /// The relay's validation data provider
+        /// The relaychain's validation data provider
         type RelayChainValidationDataProvider: ValidationDataProvider
             + BlockNumberProvider<BlockNumber = BlockNumberFor<Self>>;
+
+        /// The relaychain's Validation data's expiration time
+        type RelayChainValidationDataExpiresIn: Get<BlockNumberFor<Self>>;
 
         /// To expose XCM helper functions
         type XCM: XcmHelper<Self, BalanceOf<Self>, AssetIdOf<Self>, Self::AccountId>;
@@ -769,9 +775,13 @@ pub mod pallet {
                 &offset
             );
             if let Some(data) = T::RelayChainValidationDataProvider::validation_data() {
-                ValidationData::<T>::put(data);
+                if Self::validation_data().map_or(true, |old_data| {
+                    relaychain_block_number.saturating_sub(old_data.relay_parent_number.into())
+                        > T::RelayChainValidationDataExpiresIn::get()
+                }) {
+                    ValidationData::<T>::put(data);
+                }
             }
-
             if offset.is_zero() {
                 return <T as Config>::WeightInfo::on_initialize();
             }
@@ -1366,17 +1376,21 @@ pub mod pallet {
             if validation_data.is_none() {
                 return false;
             }
-            let validation_data = validation_data.expect("Could not be none, qed;");
+            let PersistedValidationData {
+                relay_parent_number,
+                relay_parent_storage_root,
+                ..
+            } = validation_data.expect("Could not be none, qed;");
             log::trace!(
                 target: "liquidStaking::verify_merkle_proof",
                 "relay_parent_number: {:?}, relay_parent_storage_root: {:?}",
-                &validation_data.relay_parent_number, &validation_data.relay_parent_storage_root,
+                &relay_parent_number, &relay_parent_storage_root,
             );
             let relay_proof = StorageProof::new(proof_bytes);
             let db = relay_proof.into_memory_db();
             if let Ok(Some(result)) = sp_trie::read_trie_value::<sp_trie::LayoutV1<BlakeTwo256>, _>(
                 &db,
-                &validation_data.relay_parent_storage_root,
+                &relay_parent_storage_root,
                 &key,
             ) {
                 return result == value;

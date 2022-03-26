@@ -456,8 +456,9 @@ parameter_types! {
     pub const XcmFees: Balance = 0;
     pub const BondingDuration: EraIndex = 3;
     pub const NumSlashingSpans: u32 = 0;
-    pub static DerivativeIndexList: Vec<u16> = vec![0];
+    pub const RelayChainValidationDataExpiresIn: BlockNumber = 10;
     pub static RelayChainValidationDataProvider: BlockNumber = 0;
+    pub static DerivativeIndexList: Vec<u16> = vec![0];
 }
 
 impl crate::Config for Test {
@@ -481,6 +482,7 @@ impl crate::Config for Test {
     type XCM = XcmHelper;
     type BondingDuration = BondingDuration;
     type RelayChainValidationDataProvider = RelayChainValidationDataProvider;
+    type RelayChainValidationDataExpiresIn = RelayChainValidationDataExpiresIn;
     type Members = BobOrigin;
     type NumSlashingSpans = NumSlashingSpans;
 }
