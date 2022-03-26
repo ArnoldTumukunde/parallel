@@ -13,7 +13,7 @@ import { Keyring } from '@polkadot/api'
 import { Option, u16 } from '@polkadot/types'
 
 export default function ({ createCommand }: CreateCommandParameters): Command {
-  return createCommand('Fetch Relaychain Ledger and update to Parachain')
+  return createCommand('Fetch relaychain ledger and update to parachain')
     .option('-r, --relay-ws [url]', 'the relaychain API endpoint', {
       default: 'ws://127.0.0.1:9944'
     })
@@ -28,7 +28,7 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
       const relayApi = await getRelayApi(relayWs.toString())
       const api = await getApi(paraWs.toString())
       const keyring = new Keyring({ type: 'sr25519' })
-      const signer = keyring.addFromUri(`${process.env.PARA_CHAIN_SUDO_KEY || '//Dave'}`)
+      const signer = keyring.addFromUri(`${process.env.PARA_CHAIN_SUDO_KEY || '//Eve'}`)
 
       const paraId = (await api.query.parachainInfo.parachainId()) as ParaId
       const derivativeIndex = (await api.consts.liquidStaking.derivativeIndex) as u16
@@ -64,11 +64,31 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
       )) as unknown as Option<StakingLedger>
 
       const nonce = await api.rpc.system.accountNextIndex(signer.address)
-      await api.tx.sudo
-        .sudo(
-          api.tx.liquidStaking.setStakingLedger(derivativeIndex, maybeLedger.unwrap(), proof.proof)
-        )
-        .signAndSend(signer, { nonce })
-        .finally(() => process.exit(0))
+      api.tx.liquidStaking
+        .setStakingLedger(derivativeIndex, maybeLedger.unwrap(), proof.proof)
+        .signAndSend(signer, { nonce }, ({ events, status }) => {
+          if (status.isInBlock) {
+            events.forEach(({ event }) => {
+              if (api.events.system.ExtrinsicFailed.is(event)) {
+                const [dispatchError] = event.data
+                let errorInfo
+
+                if (dispatchError.isModule) {
+                  const decoded = api.registry.findMetaError(dispatchError.asModule)
+
+                  errorInfo = `${decoded.section}.${decoded.name}`
+                } else {
+                  errorInfo = dispatchError.toString()
+                }
+                logger.error(errorInfo)
+                process.exit(1)
+              }
+
+              if (api.events.system.ExtrinsicSuccess.is(event)) {
+                process.exit(0)
+              }
+            })
+          }
+        })
     })
 }
