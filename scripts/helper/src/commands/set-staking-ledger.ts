@@ -45,8 +45,12 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
         ])
       )
 
-      const maybeValidationData =
-        (await api.query.liquidStaking.validationData()) as unknown as Option<PersistedValidationData>
+      const blockHash = await api.rpc.chain.getBlockHash()
+      logger.info(`parachain block hash: ${blockHash.toString()}`)
+
+      const maybeValidationData = (await api.query.liquidStaking.validationData.at(
+        blockHash
+      )) as unknown as Option<PersistedValidationData>
       const validationData = maybeValidationData.unwrap()
       logger.info(JSON.stringify(validationData, null, 4))
 
