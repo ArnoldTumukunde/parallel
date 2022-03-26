@@ -799,7 +799,8 @@ pub mod pallet {
             IsUpdated::<T>::remove_all(None);
             if let Some(data) = T::RelayChainValidationDataProvider::validation_data() {
                 if Self::validation_data().map_or(true, |old_data| {
-                    relaychain_block_number.saturating_sub(old_data.relay_parent_number.into())
+                    T::RelayChainValidationDataProvider::current_block_number()
+                        .saturating_sub(old_data.relay_parent_number.into())
                         >= T::RelayChainValidationDataExpiresIn::get()
                 }) {
                     ValidationData::<T>::put(data);
