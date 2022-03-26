@@ -797,15 +797,6 @@ pub mod pallet {
 
         fn on_finalize(_n: T::BlockNumber) {
             IsUpdated::<T>::remove_all(None);
-            if let Some(data) = T::RelayChainValidationDataProvider::validation_data() {
-                if Self::validation_data().map_or(true, |old_data| {
-                    T::RelayChainValidationDataProvider::current_block_number()
-                        .saturating_sub(old_data.relay_parent_number.into())
-                        >= T::RelayChainValidationDataExpiresIn::get()
-                }) {
-                    ValidationData::<T>::put(data);
-                }
-            }
         }
     }
 
@@ -1365,7 +1356,7 @@ pub mod pallet {
             })
         }
 
-        pub fn verify_merkle_proof(
+        pub(crate) fn verify_merkle_proof(
             derivative_index: DerivativeIndex,
             staking_ledger: StakingLedger<T::AccountId, BalanceOf<T>>,
             proof_bytes: Vec<Vec<u8>>,
@@ -1410,6 +1401,16 @@ pub mod pallet {
             final_key.extend_from_slice(key_hashed.as_ref() as &[u8]);
 
             final_key
+        }
+
+        pub fn set_validation_data(data: &PersistedValidationData) {
+            if Self::validation_data().map_or(true, |old_data| {
+                BlockNumberFor::<T>::from(data.relay_parent_number)
+                    .saturating_sub(old_data.relay_parent_number.into())
+                    >= T::RelayChainValidationDataExpiresIn::get()
+            }) {
+                ValidationData::<T>::put(data);
+            }
         }
     }
 }

@@ -23,6 +23,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 mod weights;
 
 use codec::{Decode, Encode, MaxEncodedLen};
+use cumulus_pallet_parachain_system::OnSystemEvent;
 use frame_support::{
     dispatch::Weight,
     match_type,
@@ -907,9 +908,18 @@ parameter_types! {
     pub const ReservedDmpWeight: Weight =  MAXIMUM_BLOCK_WEIGHT / 4;
 }
 
+pub struct SystemEventHandler;
+impl OnSystemEvent for SystemEventHandler {
+    fn on_validation_data(data: &PersistedValidationData) {
+        LiquidStaking::set_validation_data(data)
+    }
+
+    fn on_validation_code_applied() {}
+}
+
 impl cumulus_pallet_parachain_system::Config for Runtime {
     type Event = Event;
-    type OnSystemEvent = ();
+    type OnSystemEvent = SystemEventHandler;
     type SelfParaId = ParachainInfo;
     type DmpMessageHandler = DmpQueue;
     type OutboundXcmpMessageSource = XcmpQueue;
