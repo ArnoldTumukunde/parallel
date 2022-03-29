@@ -109,7 +109,20 @@
     }
   ],
   "simpleParachains": [],
-  "hrmpChannels": [],
+  "hrmpChannels": [
+    {
+      "sender": 2004,
+      "recipient": 2085,
+      "maxCapacity": 8,
+      "maxMessageSize": 512
+    },
+    {
+      "sender": 2085,
+      "recipient": 2004,
+      "maxCapacity": 8,
+      "maxMessageSize": 512
+    }
+  ],
   "types": {},
   "finalization": false
 }
