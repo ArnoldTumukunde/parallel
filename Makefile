@@ -168,6 +168,10 @@ dev-launch: shutdown
 dev-launch-kerria:
 	make PARA_ID=2012 CHAIN=kerria-dev RELAY_CHAIN=polkadot-local dev-launch
 
+.PHONY: dev-launch-vanilla
+dev-launch-vanilla:
+	make PARA_ID=2085 CHAIN=vanilla-dev RELAY_CHAIN=kusama-local dev-launch
+
 .PHONY: logs
 logs:
 	docker-compose -f output/docker-compose.yml logs -f
