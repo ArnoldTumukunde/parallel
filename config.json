@@ -87,20 +87,15 @@
     },
     {
       "bin": "../binaries/moonbeam",
-      "id": 2023,
-      "chain": "moonriver-dev",
+      "id": 1000,
       "nodes": [
         {
           "wsPort": 9949,
           "port": 30338,
           "rpcPort": 9938,
           "flags": [
-            "--state-cache-size",
-            "0",
-            "--",
-            "--execution=wasm",
-            "--state-cache-size",
-            "0"
+            "--dev",
+            "--execution=native"
           ],
           "basePath": "data/9949"
         }
@@ -111,12 +106,12 @@
   "hrmpChannels": [
     {
       "sender": 2085,
-      "recipient": 2023,
+      "recipient": 1000,
       "maxCapacity": 8,
       "maxMessageSize": 512
     },
     {
-      "sender": 2023,
+      "sender": 1000,
       "recipient": 2085,
       "maxCapacity": 8,
       "maxMessageSize": 512
