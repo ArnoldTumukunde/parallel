@@ -40,8 +40,7 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
           .batchAll(
             records.slice(i, i + step).map(([address, amount]) => {
               const subAddress = encodeAddress(decodeAddress(address, true, 0), 42)
-              const beneficiary = { Id: subAddress }
-              return api.tx.assets.mint(assetId.valueOf() as number, beneficiary, new BN(amount))
+              return api.tx.assets.mint(assetId.valueOf() as number, subAddress, new BN(amount))
             })
           )
           .toHex()
