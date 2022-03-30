@@ -82,15 +82,19 @@
             "0"
           ],
           "basePath": "data/9948"
-        },
+        }
+      ]
+    },
+    {
+      "bin": "../binaries/moonbeam",
+      "id": 2023,
+      "chain": "moonriver-dev",
+      "nodes": [
         {
           "wsPort": 9949,
           "port": 30338,
           "rpcPort": 9938,
-          "name": "bob",
           "flags": [
-            "-l",
-            "xcm=trace,loans=trace,liquidStaking=trace,crowdloans=trace,amm=trace",
             "--state-cache-size",
             "0",
             "--",
@@ -99,29 +103,25 @@
             "0"
           ],
           "basePath": "data/9949"
-        },
-        {
-          "wsPort": 9950,
-          "port": 30339,
-          "rpcPort": 9939,
-          "name": "charlie",
-          "flags": [
-            "-l",
-            "xcm=trace,loans=trace,liquidStaking=trace,crowdloans=trace,amm=trace",
-            "--state-cache-size",
-            "0",
-            "--",
-            "--execution=wasm",
-            "--state-cache-size",
-            "0"
-          ],
-          "basePath": "data/9950"
         }
       ]
     }
   ],
   "simpleParachains": [],
-  "hrmpChannels": [],
+  "hrmpChannels": [
+    {
+      "sender": 2085,
+      "recipient": 2023,
+      "maxCapacity": 8,
+      "maxMessageSize": 512
+    },
+    {
+      "sender": 2023,
+      "recipient": 2085,
+      "maxCapacity": 8,
+      "maxMessageSize": 512
+    }
+  ],
   "types": {},
   "finalization": false
 }
