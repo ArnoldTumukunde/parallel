@@ -87,7 +87,7 @@
     },
     {
       "bin": "../binaries/interbtc",
-      "id": 2121,
+      "id": 2092,
       "chain": "dev",
       "nodes": [
         {
