@@ -47,7 +47,7 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
       listenOnSignals(async (signal: string) => {
         logger.info(`Received ${signal} signal, gracefully shutting down...`)
         let q = false
-        while (!q) {
+        while (encoded && !q) {
           try {
             const status = await db.get(encoded)
             if (status === TxStatus.CONFIRMED) {

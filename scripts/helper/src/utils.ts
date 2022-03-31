@@ -150,6 +150,9 @@ export const signAndSend = async (
   const nonce = await api.rpc.system.accountNextIndex(signer.address)
   return new Promise((resolve, reject) => {
     tx.signAndSend(signer, { nonce }, ({ events, status }) => {
+      if (status.isBroadcast) {
+        logger.info('tx::broadcasting')
+      }
       if (status.isInBlock) {
         logger.info('tx::inBlock')
         events.forEach(({ event }) => {
