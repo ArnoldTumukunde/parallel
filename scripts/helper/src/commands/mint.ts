@@ -1,4 +1,4 @@
-import { getApi, listenOnSignals, signAndSend } from '../utils'
+import { getApi, gracefullyShutdown, signAndSend, decrypt } from '../utils'
 import { Command, CreateCommandParameters, program } from '@caporal/core'
 import { BN } from '@polkadot/util'
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto'
@@ -27,6 +27,9 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
     .option('-d, --db-path [path]', 'the database path', {
       default: 'db'
     })
+    .option('-k, --keystore-path [path]', 'the keystore path', {
+      default: 'keystore'
+    })
     .option('-a, --asset-id [number]', 'the asset id to mint', {
       validator: program.NUMBER,
       default: 100
@@ -34,12 +37,13 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
     .action(async actionParameters => {
       const {
         logger,
-        options: { paraWs, input, assetId, dbPath }
+        options: { paraWs, input, assetId, dbPath, keystorePath }
       } = actionParameters
-      let encoded
+      const suri = await decrypt(await readFile(keystorePath.toString(), 'utf8'))
       const api = await getApi(paraWs.toString())
       const keyring = new Keyring({ type: 'sr25519' })
-      const signer = keyring.addFromUri(`${process.env.PARA_CHAIN_SUDO_KEY || '//Dave'}`)
+      const signer = keyring.addFromUri(`${suri || process.env.PARA_CHAIN_SUDO_KEY || '//Dave'}`)
+      logger.info(`signer: ${signer}`)
       const db = new Level(dbPath.toString(), { valueEncoding: 'json' })
       const inputContent = await readFile(input.toString(), 'utf8')
       const lines = inputContent
@@ -47,7 +51,8 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
         .filter(Boolean)
         .slice(1)
         .map(x => x.replace('\r', '').split(','))
-      listenOnSignals(async (signal: string) => {
+      let encoded
+      gracefullyShutdown(async (signal: string) => {
         logger.info(`Received ${signal} signal, gracefully shutting down...`)
         let q = false
         while (encoded && !q) {

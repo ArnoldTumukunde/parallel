@@ -9,8 +9,11 @@ import { Index } from '@polkadot/types/interfaces'
 import { Logger } from '@caporal/core'
 import { SubmittableExtrinsic } from '@polkadot/api/types'
 import { ISubmittableResult } from '@polkadot/types/types'
+import inquirer from 'inquirer'
+import crypto from 'crypto'
 
 const EMPTY_U8A_32 = new Uint8Array(32)
+const IV_LENGTH = 16
 
 export const exec = (cmd: string): shell.ShellString => {
   console.log(`$ ${cmd}`)
@@ -182,7 +185,7 @@ export const signAndSend = async (
   })
 }
 
-export const listenOnSignals = (onSignal: (signal: string) => Promise<void>) => {
+export const gracefullyShutdown = (onSignal: (signal: string) => Promise<void>) => {
   ;['SIGINT', 'SIGTERM', 'SIGQUIT'].forEach(signal =>
     process.on(signal, () => {
       onSignal(signal).finally(() => {
@@ -190,4 +193,33 @@ export const listenOnSignals = (onSignal: (signal: string) => Promise<void>) => 
       })
     })
   )
+}
+export const askPass = async (): Promise<Buffer> => {
+  const questions = [
+    {
+      type: 'password',
+      name: 'password',
+      message: 'Input your keystore password'
+    }
+  ]
+  const pass = await inquirer
+    .prompt<{ password: string }>(questions)
+    .then(({ password }) => password)
+  const buf = Buffer.from(pass)
+  return Buffer.concat([buf, Buffer.alloc(Math.max(0, 32 - buf.length))]).slice(0, 32)
+}
+export const encrypt = async (msg: string): Promise<string> => {
+  const iv = crypto.randomBytes(IV_LENGTH)
+  const cipher = crypto.createCipheriv('aes-256-cbc', await askPass(), iv)
+  const crypted = Buffer.concat([cipher.update(msg), cipher.final()])
+  return iv.toString('hex') + ':' + crypted.toString('hex')
+}
+
+export const decrypt = async (msg: string): Promise<string> => {
+  const msgParts = msg.split(':')
+  const iv = Buffer.from(msgParts.shift(), 'hex')
+  const encrypted = Buffer.from(msgParts.join(':'), 'hex')
+  const decipher = crypto.createDecipheriv('aes-256-cbc', await askPass(), iv)
+  const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()])
+  return decrypted.toString()
 }
