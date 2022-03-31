@@ -1,10 +1,20 @@
 docker build -t parallelfinance/helper:latest -f Dockerfile.release .
 
+docker run --rm \
+         -it \
+         -v "$(pwd):/app" \
+         -w $(pwd) \
+         parallelfinance/helper:latest \
+         create \
+         keystore \
+         --keystore-path /app/keystore
+
 docker run --restart always \
-         -i \
+         -it \
          -v "$(pwd):/app" \
          parallelfinance/helper:latest mint \
          --para-ws ws://127.0.0.1:9948 \
          --input /app/input.csv \
          --asset-id 100 \
-         --db-path /app/db
+         --db-path /app/db \
+         --keystore-path /app/keystore
