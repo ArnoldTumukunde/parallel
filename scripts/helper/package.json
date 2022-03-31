@@ -30,6 +30,7 @@
     "@polkadot/util": "^8.4.1",
     "@polkadot/util-crypto": "^8.4.1",
     "dotenv": "^16.0.0",
+    "level": "^8.0.0",
     "shelljs": "^0.8.5"
   }
 }

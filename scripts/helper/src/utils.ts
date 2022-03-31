@@ -5,7 +5,10 @@ import { blake2AsU8a } from '@polkadot/util-crypto'
 import { stringToU8a, bnToU8a, u8aConcat, u8aToHex } from '@polkadot/util'
 import { decodeAddress, encodeAddress } from '@polkadot/keyring'
 import { KeyringPair } from '@polkadot/keyring/types'
-import { Index } from '@polkadot/types/interfaces'
+import { Hash, Index } from '@polkadot/types/interfaces'
+import { Logger } from '@caporal/core'
+import { SubmittableExtrinsic } from '@polkadot/api/types'
+import { ISubmittableResult } from '@polkadot/types/types'
 
 const EMPTY_U8A_32 = new Uint8Array(32)
 
@@ -131,8 +134,47 @@ export const getApi = async (endpoint: string): Promise<ApiPromise> => {
     provider: new WsProvider(endpoint)
   })
 }
+
 export const getRelayApi = async (endpoint: string): Promise<ApiPromise> => {
   return ApiPromise.create({
     provider: new WsProvider(endpoint)
+  })
+}
+
+export const signAndSend = async (
+  api: ApiPromise,
+  tx: SubmittableExtrinsic<'promise', ISubmittableResult>,
+  signer: KeyringPair,
+  logger: Logger
+): Promise<void> => {
+  const nonce = await api.rpc.system.accountNextIndex(signer.address)
+  return new Promise((resolve, reject) => {
+    tx.signAndSend(signer, { nonce }, ({ events, status }) => {
+      if (status.isInBlock) {
+        logger.info('tx::inBlock')
+        events.forEach(({ event }) => {
+          if (api.events.system.ExtrinsicFailed.is(event)) {
+            const [dispatchError] = event.data
+            let errorInfo
+
+            if (dispatchError.isModule) {
+              const decoded = api.registry.findMetaError(dispatchError.asModule)
+
+              errorInfo = `${decoded.section}.${decoded.name}`
+            } else {
+              errorInfo = dispatchError.toString()
+            }
+            return reject(errorInfo)
+          }
+        })
+      }
+      if (status.isFinalized) {
+        logger.info(`tx::finalized! block: ${status.asFinalized.toHex()}`)
+        return resolve()
+      }
+      if (status.isFinalityTimeout) {
+        return reject('tx::finalityTimeout')
+      }
+    })
   })
 }
