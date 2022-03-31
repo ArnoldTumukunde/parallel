@@ -1,4 +1,4 @@
-import { getApi, signAndSend } from '../utils'
+import { getApi, listenOnSignals, signAndSend } from '../utils'
 import { Command, CreateCommandParameters, program } from '@caporal/core'
 import { BN } from '@polkadot/util'
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto'
@@ -33,6 +33,7 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
         logger,
         options: { paraWs, input, assetId }
       } = actionParameters
+      let encoded
       const api = await getApi(paraWs.toString())
       const keyring = new Keyring({ type: 'sr25519' })
       const signer = keyring.addFromUri(`${process.env.PARA_CHAIN_SUDO_KEY || '//Dave'}`)
@@ -43,6 +44,22 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
         .filter(Boolean)
         .slice(1)
         .map(x => x.replace('\r', '').split(','))
+      listenOnSignals(async (signal: string) => {
+        logger.info(`Received ${signal} signal, gracefully shutting down...`)
+        let q = false
+        while (!q) {
+          try {
+            const status = await db.get(encoded)
+            if (status === TxStatus.CONFIRMED) {
+              q = true
+            }
+          } catch (e) {
+            if (e.code === 'LEVEL_NOT_FOUND') {
+              q = true
+            }
+          }
+        }
+      })
       for (let i = 0; i < lines.length; i += BATCH_SIZE) {
         const chunk = lines.slice(i, i + BATCH_SIZE)
         const calls = chunk.map(([address, amount]) => {
@@ -50,7 +67,7 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
           return api.tx.assets.mint(assetId.valueOf() as number, subAddress, new BN(amount))
         })
         const tx = api.tx.utility.batchAll(calls)
-        const encoded = tx.toHex()
+        encoded = tx.toHex()
         logger.info(`=====================Line: ${i.toString().padStart(4, '0')}==================`)
         try {
           const status = await db.get(encoded)

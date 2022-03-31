@@ -5,7 +5,7 @@ import { blake2AsU8a } from '@polkadot/util-crypto'
 import { stringToU8a, bnToU8a, u8aConcat, u8aToHex } from '@polkadot/util'
 import { decodeAddress, encodeAddress } from '@polkadot/keyring'
 import { KeyringPair } from '@polkadot/keyring/types'
-import { Hash, Index } from '@polkadot/types/interfaces'
+import { Index } from '@polkadot/types/interfaces'
 import { Logger } from '@caporal/core'
 import { SubmittableExtrinsic } from '@polkadot/api/types'
 import { ISubmittableResult } from '@polkadot/types/types'
@@ -177,4 +177,14 @@ export const signAndSend = async (
       }
     })
   })
+}
+
+export const listenOnSignals = (onSignal: (signal: string) => Promise<void>) => {
+  ;['SIGINT', 'SIGTERM', 'SIGQUIT'].forEach(signal =>
+    process.on(signal, () => {
+      onSignal(signal).finally(() => {
+        process.exit(0)
+      })
+    })
+  )
 }
