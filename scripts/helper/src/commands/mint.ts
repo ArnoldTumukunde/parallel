@@ -53,13 +53,9 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
         while (encoded && !q) {
           try {
             const status = await db.get(encoded)
-            if (status === TxStatus.CONFIRMED) {
-              q = true
-            }
+            q = status === TxStatus.CONFIRMED
           } catch (e) {
-            if (e.code === 'LEVEL_NOT_FOUND') {
-              q = true
-            }
+            q = e.code === 'LEVEL_NOT_FOUND'
           }
         }
       })
