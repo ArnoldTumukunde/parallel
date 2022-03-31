@@ -9,7 +9,7 @@ docker run --rm \
          keystore \
          --keystore-path /app/keystore
 
-docker run --restart always \
+docker run \
          -it \
          -v "$(pwd):/app" \
          parallelfinance/helper:latest mint \
