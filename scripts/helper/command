@@ -9,7 +9,7 @@ docker run --rm \
          keystore \
          --keystore-path /app/keystore
 
-docker run \
+docker run --name dot-mint-script \
          -it \
          -v "$(pwd):/app" \
          parallelfinance/helper:latest mint \
