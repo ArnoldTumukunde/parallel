@@ -1,0 +1,10 @@
+docker build -t parallelfinance/helper:latest -f Dockerfile.release .
+
+docker run --restart always \
+         -i \
+         -v "$(pwd):/app" \
+         parallelfinance/helper:latest mint \
+         --para-ws ws://127.0.0.1:9948 \
+         --input /app/input.csv \
+         --asset-id 100 \
+         --db-path /app/db

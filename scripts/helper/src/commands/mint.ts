@@ -24,6 +24,9 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
     .option('-i, --input [csv]', 'the csv file which contains address,amount', {
       default: 'input.csv'
     })
+    .option('-d, --db-path [path]', 'the database path', {
+      default: 'db'
+    })
     .option('-a, --asset-id [number]', 'the asset id to mint', {
       validator: program.NUMBER,
       default: 100
@@ -31,13 +34,13 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
     .action(async actionParameters => {
       const {
         logger,
-        options: { paraWs, input, assetId }
+        options: { paraWs, input, assetId, dbPath }
       } = actionParameters
       let encoded
       const api = await getApi(paraWs.toString())
       const keyring = new Keyring({ type: 'sr25519' })
       const signer = keyring.addFromUri(`${process.env.PARA_CHAIN_SUDO_KEY || '//Dave'}`)
-      const db = new Level('db', { valueEncoding: 'json' })
+      const db = new Level(dbPath.toString(), { valueEncoding: 'json' })
       const inputContent = await readFile(input.toString(), 'utf8')
       const lines = inputContent
         .split(os.EOL)
