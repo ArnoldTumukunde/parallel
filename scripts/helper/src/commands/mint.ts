@@ -43,7 +43,7 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
       const api = await getApi(paraWs.toString())
       const keyring = new Keyring({ type: 'sr25519' })
       const signer = keyring.addFromUri(`${suri || process.env.PARA_CHAIN_SUDO_KEY || '//Dave'}`)
-      logger.info(`signer: ${signer}`)
+      logger.info(`signer: ${signer.address}`)
       const db = new Level(dbPath.toString(), { valueEncoding: 'json' })
       const inputContent = await readFile(input.toString(), 'utf8')
       const lines = inputContent
