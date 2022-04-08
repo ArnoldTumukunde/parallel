@@ -140,19 +140,24 @@ impl<T: Config> Transfer<T::AccountId> for Pallet<T> {
             Error::<T>::InsufficientCollateral
         );
 
-        Self::transfer_ptokens_internal(ptoken_id, source, dest, amount)?;
+        Self::do_transfer_ptokens(ptoken_id, source, dest, amount)?;
         Ok(amount)
     }
 }
 
 impl<T: Config> Pallet<T> {
     #[require_transactional]
-    fn transfer_ptokens_internal(
+    fn do_transfer_ptokens(
         ptoken_id: AssetIdOf<T>,
         source: &T::AccountId,
         dest: &T::AccountId,
         amount: BalanceOf<T>,
     ) -> Result<(), DispatchError> {
+        // update supply index before modify supply balance.
+        Self::update_reward_supply_index(ptoken_id)?;
+        Self::distribute_supplier_reward(ptoken_id, source)?;
+        Self::distribute_supplier_reward(ptoken_id, dest)?;
+
         let underlying_id = Self::underlying_id(ptoken_id)?;
         AccountDeposits::<T>::try_mutate_exists(
             underlying_id,

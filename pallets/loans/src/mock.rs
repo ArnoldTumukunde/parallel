@@ -23,7 +23,7 @@ use sp_runtime::{testing::Header, traits::IdentityLookup};
 use sp_std::vec::Vec;
 use std::{cell::RefCell, collections::HashMap};
 
-pub use primitives::tokens::{DOT, HKO, KSM, PDOT, PHKO, PKSM, PUSDT, USDT, XDOT, XKSM};
+pub use primitives::tokens::{DOT, HKO, KSM, PDOT, PHKO, PKSM, PUSDT, SDOT, SKSM, USDT};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -57,7 +57,7 @@ impl frame_system::Config for Test {
     type Origin = Origin;
     type Call = Call;
     type Index = u64;
-    type BlockNumber = u64;
+    type BlockNumber = BlockNumber;
     type Hash = H256;
     type Hashing = ::sp_runtime::traits::BlakeTwo256;
     type AccountId = AccountId;
@@ -83,6 +83,7 @@ pub const ALICE: AccountId = 1;
 pub const BOB: AccountId = 2;
 pub const CHARLIE: AccountId = 3;
 pub const DAVE: AccountId = 4;
+pub const EVE: AccountId = 5;
 
 parameter_types! {
     pub const MinimumPeriod: u64 = 5;
@@ -145,7 +146,7 @@ pub struct Decimal;
 impl DecimalProvider<CurrencyId> for Decimal {
     fn get_decimal(asset_id: &CurrencyId) -> Option<u8> {
         match *asset_id {
-            KSM | XKSM => Some(12),
+            KSM | SKSM => Some(12),
             HKO => Some(12),
             USDT => Some(6),
             _ => None,
@@ -159,7 +160,7 @@ impl LiquidStakingCurrenciesProvider<CurrencyId> for LiquidStaking {
         Some(KSM)
     }
     fn get_liquid_currency() -> Option<CurrencyId> {
-        Some(XKSM)
+        Some(SKSM)
     }
 }
 
@@ -185,7 +186,7 @@ impl MockPriceFeeder {
     thread_local! {
         pub static PRICES: RefCell<HashMap<CurrencyId, Option<PriceDetail>>> = {
             RefCell::new(
-                vec![HKO, DOT, KSM, USDT, XKSM, XDOT]
+                vec![HKO, DOT, KSM, USDT, SKSM, SDOT]
                     .iter()
                     .map(|&x| (x, Some((Price::saturating_from_integer(1), 1))))
                     .collect()
@@ -242,6 +243,7 @@ impl pallet_assets::Config for Test {
 
 parameter_types! {
     pub const LoansPalletId: PalletId = PalletId(*b"par/loan");
+    pub const RewardAssetId: CurrencyId = HKO;
 }
 
 impl Config for Test {
@@ -253,6 +255,7 @@ impl Config for Test {
     type WeightInfo = ();
     type UnixTime = TimestampPallet;
     type Assets = CurrencyAdapter;
+    type RewardAssetId = RewardAssetId;
 }
 
 parameter_types! {
@@ -277,7 +280,7 @@ pub(crate) fn new_test_ext() -> sp_io::TestExternalities {
         Assets::force_create(Origin::root(), DOT, ALICE, true, 1).unwrap();
         Assets::force_create(Origin::root(), KSM, ALICE, true, 1).unwrap();
         Assets::force_create(Origin::root(), USDT, ALICE, true, 1).unwrap();
-        Assets::force_create(Origin::root(), XDOT, ALICE, true, 1).unwrap();
+        Assets::force_create(Origin::root(), SDOT, ALICE, true, 1).unwrap();
 
         Assets::mint(Origin::signed(ALICE), KSM, ALICE, dollar(1000)).unwrap();
         Assets::mint(Origin::signed(ALICE), DOT, ALICE, dollar(1000)).unwrap();
@@ -304,7 +307,7 @@ pub(crate) fn new_test_ext() -> sp_io::TestExternalities {
 }
 
 /// Progress to the given block, and then finalize the block.
-pub(crate) fn run_to_block(n: BlockNumber) {
+pub(crate) fn _run_to_block(n: BlockNumber) {
     Loans::on_finalize(System::block_number());
     for b in (System::block_number() + 1)..=n {
         System::set_block_number(b);
@@ -316,8 +319,30 @@ pub(crate) fn run_to_block(n: BlockNumber) {
     }
 }
 
+pub fn almost_equal(target: u128, value: u128) -> bool {
+    let target = target as i128;
+    let value = value as i128;
+    let diff = (target - value).abs() as u128;
+    diff < micro_dollar(2)
+}
+
+pub fn accrue_interest_per_block(asset_id: CurrencyId, block_delta_secs: u64, run_to_block: u64) {
+    for i in 1..run_to_block {
+        TimestampPallet::set_timestamp(6000 + (block_delta_secs * 1000 * i));
+        Loans::accrue_interest(asset_id).unwrap();
+    }
+}
+
 pub fn dollar(d: u128) -> u128 {
     d.saturating_mul(10_u128.pow(12))
+}
+
+pub fn milli_dollar(d: u128) -> u128 {
+    d.saturating_mul(10_u128.pow(9))
+}
+
+pub fn micro_dollar(d: u128) -> u128 {
+    d.saturating_mul(10_u128.pow(6))
 }
 
 pub fn million_dollar(d: u128) -> u128 {
@@ -337,7 +362,8 @@ pub const fn market_mock(ptoken_id: u32) -> Market<Balance> {
             jump_utilization: Ratio::from_percent(80),
         }),
         reserve_factor: Ratio::from_percent(15),
-        cap: 1_000_000_000_000_000_000_000u128, // set to $1B
+        supply_cap: 1_000_000_000_000_000_000_000u128, // set to 1B
+        borrow_cap: 1_000_000_000_000_000_000_000u128, // set to 1B
         ptoken_id,
     }
 }

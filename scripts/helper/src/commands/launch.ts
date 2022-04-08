@@ -1,15 +1,16 @@
-import getConfig from './config'
+import getConfig from '../config'
 import '@polkadot/api-augment'
-import { options } from '@parallel-finance/api'
-import { ApiPromise, Keyring, WsProvider } from '@polkadot/api'
+import { Keyring } from '@polkadot/api'
 import {
   chainHeight,
   createAddress,
   nextNonce,
   sleep,
-  sovereignAccountOf,
+  sovereignRelayOf,
   subAccountId,
-  exec
+  exec,
+  getApi,
+  getRelayApi
 } from '../utils'
 import { ActionParameters, Command, CreateCommandParameters } from '@caporal/core'
 
@@ -17,14 +18,7 @@ const GiftPalletId = 'par/gift'
 
 async function para({ logger, options: { paraWs, network } }: ActionParameters) {
   const config = getConfig(network.valueOf() as string)
-  const api = await ApiPromise.create(
-    options({
-      types: {
-        'Compact<TAssetBalance>': 'Compact<Balance>'
-      },
-      provider: new WsProvider(paraWs.toString())
-    })
-  )
+  const api = await getApi(paraWs.toString())
 
   logger.info('Wait for parachain to produce blocks')
   do await sleep(1000)
@@ -46,7 +40,7 @@ async function para({ logger, options: { paraWs, network } }: ActionParameters) 
   for (const { assetId, marketConfig } of config.markets) {
     logger.info(`Create market for asset ${assetId}, ptokenId is ${marketConfig.ptokenId}`)
     call.push(
-      api.tx.sudo.sudo(api.tx.loans.addMarket(assetId, api.createType('Market', marketConfig))),
+      api.tx.sudo.sudo(api.tx.loans.addMarket(assetId, marketConfig)),
       api.tx.sudo.sudo(api.tx.loans.activateMarket(assetId))
     )
   }
@@ -81,13 +75,27 @@ async function para({ logger, options: { paraWs, network } }: ActionParameters) 
   const { members, chainIds, bridgeTokens } = config.bridge
   members.forEach(member => call.push(api.tx.sudo.sudo(api.tx.bridgeMembership.addMember(member))))
   chainIds.forEach(chainId => call.push(api.tx.sudo.sudo(api.tx.bridge.registerChain(chainId))))
-  bridgeTokens.map(({ assetId, id, external, fee }) =>
-    call.push(api.tx.sudo.sudo(api.tx.bridge.registerBridgeToken(assetId, { id, external, fee })))
+  bridgeTokens.map(({ assetId, id, external, fee, enable, outCap, outAmount, inCap, inAmount }) =>
+    call.push(
+      api.tx.sudo.sudo(
+        api.tx.bridge.registerBridgeToken(assetId, {
+          id,
+          external,
+          fee,
+          enable,
+          outCap,
+          outAmount,
+          inCap,
+          inAmount
+        })
+      )
+    )
   )
 
   call.push(
     api.tx.sudo.sudo(api.tx.liquidStaking.updateMarketCap(config.liquidMarketCap)),
-    api.tx.sudo.sudo(api.tx.xcmHelper.updateXcmFees(config.xcmFees)),
+    api.tx.sudo.sudo(api.tx.liquidStaking.forceSetEraStartBlock(61)),
+    api.tx.sudo.sudo(api.tx.liquidStaking.forceSetCurrentEra(3)),
     api.tx.balances.transfer(createAddress(GiftPalletId), config.gift)
   )
 
@@ -97,9 +105,7 @@ async function para({ logger, options: { paraWs, network } }: ActionParameters) 
 
 async function relay({ logger, options: { relayWs, network } }: ActionParameters) {
   const config = getConfig(network.valueOf() as string)
-  const api = await ApiPromise.create({
-    provider: new WsProvider(relayWs.toString())
-  })
+  const api = await getRelayApi(relayWs.toString())
 
   logger.info('Wait for relaychain to produce blocks')
   do await sleep(1000)
@@ -118,7 +124,7 @@ async function relay({ logger, options: { relayWs, network } }: ActionParameters
     await api.tx.sudo
       .sudo(
         api.tx.registrar.forceRegister(
-          subAccountId(signer, derivativeIndex),
+          subAccountId(signer.address, derivativeIndex),
           config.paraDeposit,
           paraId,
           state,
@@ -136,7 +142,10 @@ async function relay({ logger, options: { relayWs, network } }: ActionParameters
   call.push(api.tx.sudo.sudo(api.tx.auctions.newAuction(config.auctionDuration, config.leaseIndex)))
   call.push(
     ...config.crowdloans.map(({ derivativeIndex }) =>
-      api.tx.balances.transfer(subAccountId(signer, derivativeIndex), config.crowdloanDeposit)
+      api.tx.balances.transfer(
+        subAccountId(signer.address, derivativeIndex),
+        config.crowdloanDeposit
+      )
     )
   )
   call.push(
@@ -152,7 +161,7 @@ async function relay({ logger, options: { relayWs, network } }: ActionParameters
   if (relayAsset && relayAsset.balances.length) {
     call.push(
       ...relayAsset.balances.map(([, balance]) =>
-        api.tx.balances.transfer(sovereignAccountOf(config.paraId), balance)
+        api.tx.balances.transfer(sovereignRelayOf(config.paraId), balance)
       )
     )
   }

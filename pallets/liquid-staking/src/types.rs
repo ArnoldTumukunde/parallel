@@ -69,9 +69,6 @@ impl<Balance: BalanceT + FixedPointOperand> MatchingLedger<Balance> {
                     .ok_or(ArithmeticError::Underflow)?;
             }
         }
-        if self.total_stake_amount == self.total_unstake_amount {
-            self.reset();
-        }
         Ok(())
     }
 
@@ -95,15 +92,16 @@ impl<Balance: BalanceT + FixedPointOperand> MatchingLedger<Balance> {
                     .ok_or(ArithmeticError::Underflow)?;
             }
         }
-        if self.total_stake_amount == self.total_unstake_amount {
-            self.reset();
-        }
         Ok(())
     }
 
-    fn reset(&mut self) {
-        self.total_unstake_amount = Zero::zero();
+    pub fn clear(&mut self) {
+        if self.total_stake_amount != self.total_unstake_amount {
+            return;
+        }
+
         self.total_stake_amount = Zero::zero();
+        self.total_unstake_amount = Zero::zero();
     }
 }
 
@@ -249,5 +247,13 @@ impl<AccountId, Balance: BalanceT + FixedPointOperand> StakingLedger<AccountId, 
         // 1. No chill call is needed
         // 2. No minimum balance check
         self.active -= value;
+    }
+
+    /// If the first item is smaller or equal to current_era,
+    /// then it has unbonded and is withdrawable on relaychain.
+    pub fn has_unbonded(&self, current_era: EraIndex) -> bool {
+        self.unlocking
+            .first()
+            .map_or(false, |chunk| chunk.era <= current_era)
     }
 }

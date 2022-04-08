@@ -1,14 +1,12 @@
-use super::{AccountId, BlockNumber, ParaId};
+use super::{AccountId, Balance, BlockNumber, ParaId};
 
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::pallet_prelude::Weight;
 use frame_system::Config;
 use scale_info::TypeInfo;
-use sp_runtime::{
-    traits::{StaticLookup, Zero},
-    MultiSignature, RuntimeDebug,
-};
+use sp_runtime::{traits::StaticLookup, MultiSignature, RuntimeDebug};
 use sp_std::{boxed::Box, vec::Vec};
+use xcm::latest::MultiLocation;
 
 /// A destination account for payment.
 #[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
@@ -293,58 +291,35 @@ pub enum PolkadotCall<T: Config> {
     Crowdloans(CrowdloansCall<T>),
 }
 
-/// The xcm weight when execute ump call wrapped in xcm message
 #[derive(Copy, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-pub struct XcmWeightMisc<Weight> {
-    /// The weight when execute bond xcm message
-    pub bond_weight: Weight,
-    /// The weight when execute bond_extra xcm message
-    pub bond_extra_weight: Weight,
-    /// The weight when execute unbond xcm message
-    pub unbond_weight: Weight,
-    /// The weight when execute rebond xcm message
-    pub rebond_weight: Weight,
-    /// The weight when execute withdraw_unbonded xcm message
-    pub withdraw_unbonded_weight: Weight,
-    /// The weight when execute nominate xcm message
-    pub nominate_weight: Weight,
-    /// The weight when execute contribute xcm message
-    pub contribute_weight: Weight,
-    /// The weight when execute withdraw xcm message
-    pub withdraw_weight: Weight,
-    /// The weight when execute add_memo xcm message
-    pub add_memo_weight: Weight,
+pub struct XcmWeightFeeMisc<Weight, Balance> {
+    pub weight: Weight,
+    pub fee: Balance,
 }
 
-impl Default for XcmWeightMisc<Weight> {
+impl Default for XcmWeightFeeMisc<Weight, Balance> {
     fn default() -> Self {
         let default_weight = 3_000_000_000;
-        XcmWeightMisc {
-            bond_weight: default_weight,
-            bond_extra_weight: default_weight,
-            unbond_weight: default_weight,
-            rebond_weight: default_weight,
-            withdraw_unbonded_weight: default_weight,
-            nominate_weight: default_weight,
-            contribute_weight: default_weight,
-            withdraw_weight: default_weight,
-            add_memo_weight: default_weight,
+        let default_fee = 10_000_000_000;
+        XcmWeightFeeMisc {
+            weight: default_weight,
+            fee: default_fee,
         }
     }
 }
 
-impl XcmWeightMisc<Weight> {
-    pub fn has_zero(&self) -> bool {
-        self.bond_weight.is_zero()
-            || self.bond_extra_weight.is_zero()
-            || self.unbond_weight.is_zero()
-            || self.rebond_weight.is_zero()
-            || self.withdraw_unbonded_weight.is_zero()
-            || self.nominate_weight.is_zero()
-            || self.contribute_weight.is_zero()
-            || self.withdraw_weight.is_zero()
-            || self.add_memo_weight.is_zero()
-    }
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
+pub enum XcmCall {
+    Bond,
+    BondExtra,
+    Unbond,
+    Rebond,
+    WithdrawUnbonded,
+    Nominate,
+    Contribute,
+    Withdraw,
+    AddMemo,
+    TransferToSiblingchain(Box<MultiLocation>),
 }
 
 #[macro_export]

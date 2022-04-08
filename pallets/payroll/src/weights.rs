@@ -21,22 +21,36 @@
 use frame_support::weights::Weight;
 use sp_std::marker::PhantomData;
 
-/// Weight functions needed for pallet_nominee_election.
+/// Weight functions needed for pallet_prices.
 pub trait WeightInfo {
-    fn set_validators() -> Weight;
+    fn create_stream() -> Weight;
+    fn cancel_stream() -> Weight;
+    fn withdraw_from_stream() -> Weight;
 }
 
-/// Weights for pallet_nominee_election using the Substrate node and recommended hardware.
+/// Weights for pallet_prices using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
-    fn set_validators() -> Weight {
+    fn create_stream() -> Weight {
+        10_000 as Weight
+    }
+    fn cancel_stream() -> Weight {
+        10_000 as Weight
+    }
+    fn withdraw_from_stream() -> Weight {
         10_000 as Weight
     }
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
-    fn set_validators() -> Weight {
+    fn create_stream() -> Weight {
+        10_000 as Weight
+    }
+    fn cancel_stream() -> Weight {
+        10_000 as Weight
+    }
+    fn withdraw_from_stream() -> Weight {
         10_000 as Weight
     }
 }

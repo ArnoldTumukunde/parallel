@@ -1,7 +1,7 @@
-PARA_ID        											:= 2085
-CHAIN          											:= vanilla-dev
-RELAY_CHAIN                         := kusama-local
-RUNTIME        											:= vanilla-runtime
+PARA_ID        											:= 2012
+CHAIN          											:= kerria-dev
+RELAY_CHAIN                         := polkadot-local
+RUNTIME        											:= kerria-runtime
 BLOCK_AT       											:= 0x0000000000000000000000000000000000000000000000000000000000000000
 URL            											:= ws://localhost:9948
 RELAY_URL            								:= ws://localhost:9944
@@ -9,8 +9,9 @@ KEYSTORE_PATH  											:= keystore
 SURI           											:= //Alice
 LAUNCH_CONFIG_YAML	  							:= config.yml
 LAUNCH_CONFIG_JSON	  							:= config.json
+DOCKER_OVERRIDE_YAML                := docker-compose.override.yml
 DOCKER_TAG     											:= latest
-RELAY_DOCKER_TAG										:= v0.9.16
+RELAY_DOCKER_TAG										:= v0.9.17
 
 .PHONY: init
 init: submodules
@@ -29,8 +30,16 @@ submodules:
 build:
 	cargo build --bin parallel
 
+.PHONY: build-release
+build-release:
+	cargo build --workspace --exclude runtime-integration-tests --bin parallel --release  --features runtime-benchmarks --features try-runtime
+
+.PHONY: clean
+clean:
+	cargo clean -p parallel -p vanilla-runtime -p kerria-runtime -p heiko-runtime -p parallel-runtime
+
 .PHONY: ci
-ci: check lint check-helper check-wasm test
+ci: check lint check-helper check-wasm test integration-test
 
 .PHONY: check
 check:
@@ -46,7 +55,11 @@ check-helper:
 
 .PHONY: test
 test:
-	SKIP_WASM_BUILD= cargo test --workspace --features runtime-benchmarks --exclude parallel --exclude parallel-runtime --exclude vanilla-runtime --exclude kerria-runtime --exclude heiko-runtime --exclude pallet-loans-rpc --exclude pallet-loans-rpc-runtime-api --exclude parallel-primitives -- --nocapture
+	SKIP_WASM_BUILD= cargo test --workspace --features runtime-benchmarks --exclude runtime-integration-tests --exclude parallel --exclude parallel-runtime --exclude vanilla-runtime --exclude kerria-runtime --exclude heiko-runtime --exclude pallet-loans-rpc --exclude pallet-loans-rpc-runtime-api --exclude parallel-primitives -- --nocapture
+
+.PHONY: integration-test
+integration-test:
+	SKIP_WASM_BUILD= cargo test -p runtime-integration-tests -- --nocapture
 
 .PHONY: bench
 bench: bench-loans bench-liquid-staking bench-amm bench-amm-router bench-crowdloans bench-bridge bench-xcm-helper bench-farming
@@ -83,6 +96,14 @@ bench-liquid-staking:
 .PHONY: bench-amm-router
 bench-amm-router:
 	cargo run --release --features runtime-benchmarks -- benchmark --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-router --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/router/src/weights.rs
+
+.PHONY: bench-asset-manager
+bench-asset-manager:
+	cargo run --release --features runtime-benchmarks -- benchmark --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-asset-manager --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/asset-manager/src/weights.rs
+
+.PHONY: bench-payroll
+bench-payroll:
+	cargo run --release --features runtime-benchmarks -- benchmark --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-payroll --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/payroll/src/weights.rs
 
 .PHONY: lint
 lint:
@@ -130,17 +151,18 @@ launch: shutdown
 	docker image pull parallelfinance/liquidation-client:latest
 	docker image pull parallelfinance/nominate-client:latest
 	docker image pull parallelfinance/oracle-client:latest
+	docker image pull parallelfinance/heiko-dapp:latest
 	docker image pull parallelfinance/parallel-dapp:latest
 	parachain-launch generate $(LAUNCH_CONFIG_YAML) \
 		&& (cp -r keystore* output || true) \
 		&& cp docker-compose.override.yml output \
 		&& cd output \
-		&& DOCKER_CLIENT_TIMEOUT=180 COMPOSE_HTTP_TIMEOUT=180 docker-compose up -d --build
+		&& DOCKER_CLIENT_TIMEOUT=180 COMPOSE_HTTP_TIMEOUT=180 PARA_ID=$(PARA_ID) docker-compose up -d --build
 	cd scripts/helper && yarn start launch --network $(CHAIN)
 
-.PHONY: launch-kerria
-launch-kerria:
-	make PARA_ID=2012 CHAIN=kerria-dev RELAY_CHAIN=polkadot-local launch
+.PHONY: launch-vanilla
+launch-vanilla:
+	make PARA_ID=2085 CHAIN=vanilla-dev RELAY_CHAIN=kusama-local launch
 
 .PHONY: dev-launch
 dev-launch: shutdown
@@ -149,9 +171,9 @@ dev-launch: shutdown
 	yq -i eval '.parachains[0].chain = "$(CHAIN)"' $(LAUNCH_CONFIG_JSON) -j
 	ts-node scripts/polkadot-launch/src/cli.ts config.json
 
-.PHONY: dev-launch-kerria
-dev-launch-kerria:
-	make PARA_ID=2012 CHAIN=kerria-dev RELAY_CHAIN=polkadot-local dev-launch
+.PHONY: dev-launch-vanilla
+dev-launch-vanilla:
+	make PARA_ID=2085 CHAIN=vanilla-dev RELAY_CHAIN=kusama-local dev-launch
 
 .PHONY: logs
 logs:
