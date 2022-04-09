@@ -32,7 +32,7 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
         api.tx.generalCouncil
           .propose(
             2,
-            api.tx.polkadotXcm.send(
+            api.tx.ormlXcm.sendAsSovereign(
               {
                 V1: {
                   parents: 1,
