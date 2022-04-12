@@ -108,7 +108,17 @@ export const createPaidXcm = (encoded: string, sovereignAccount: string) => {
       {
         DepositAsset: {
           assets: {
-            Wild: 'All'
+            Wild: {
+              AllOf: {
+                id: {
+                  Concrete: {
+                    parents: 0,
+                    interior: 'Here'
+                  }
+                },
+                fun: 'Fungible'
+              }
+            }
           },
           maxAssets: 1,
           beneficiary: {

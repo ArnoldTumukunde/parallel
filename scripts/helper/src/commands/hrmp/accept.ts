@@ -80,7 +80,7 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
               }
             }
           },
-          createUnpaidXcm(encoded)
+          createUnpaidXcm(`0x${encoded.slice(6)}`)
         )
       ])
 
