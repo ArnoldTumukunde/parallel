@@ -1,6 +1,5 @@
-import { createXcm, getApi, getRelayApi, nextNonce, sovereignRelayOf } from '../../utils'
+import { createPaidXcm, getApi, getRelayApi, sovereignRelayOf } from '../../utils'
 import { Command, CreateCommandParameters, program } from '@caporal/core'
-import { Keyring } from '@polkadot/api'
 import { PolkadotRuntimeParachainsConfigurationHostConfiguration } from '@polkadot/types/lookup'
 
 export default function ({ createCommand }: CreateCommandParameters): Command {
@@ -19,7 +18,6 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
     })
     .action(async actionParameters => {
       const {
-        logger,
         args: { source, target },
         options: { relayWs, paraWs }
       } = actionParameters
@@ -34,9 +32,6 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
           configuration.hrmpChannelMaxMessageSize
         )
         .toHex()
-      const signer = new Keyring({ type: 'sr25519' }).addFromUri(
-        `${process.env.PARA_CHAIN_SUDO_KEY || '//Dave'}`
-      )
       console.log(
         api.tx.generalCouncil
           .propose(
@@ -48,7 +43,7 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
                   interior: 'Here'
                 }
               },
-              createXcm(`0x${encoded.slice(6)}`, sovereignRelayOf(source.valueOf() as number))
+              createPaidXcm(`0x${encoded.slice(6)}`, sovereignRelayOf(source.valueOf() as number))
             ),
             1024
           )

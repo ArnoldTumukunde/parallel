@@ -1,6 +1,15 @@
-import { createXcm, getApi, getRelayApi, nextNonce, sovereignRelayOf } from '../../utils'
+import {
+  createAddress,
+  createPaidXcm,
+  createUnpaidXcm,
+  getApi,
+  getRelayApi,
+  sovereignRelayOf
+} from '../../utils'
 import { Command, CreateCommandParameters, program } from '@caporal/core'
-import { Keyring } from '@polkadot/api'
+import { PolkadotRuntimeParachainsConfigurationHostConfiguration } from '@polkadot/types/lookup'
+
+const TREASURY_PALLET_ID = 'py/trsry'
 
 export default function ({ createCommand }: CreateCommandParameters): Command {
   return createCommand('accept hrmp channel from specific chain')
@@ -14,37 +23,59 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
       default: 'wss://kusama-rpc.parallel.fi'
     })
     .option('-p, --para-ws [url]', 'the parachain API endpoint', {
-      default: 'wss://heiko-rpc.parallel.fi'
+      default: 'wss://statemine-rpc.polkadot.io'
     })
     .action(async actionParameters => {
       const {
-        logger,
         args: { source, target },
         options: { relayWs, paraWs }
       } = actionParameters
       const relayApi = await getRelayApi(relayWs.toString())
-      const encoded = relayApi.tx.hrmp.hrmpAcceptOpenChannel(source.valueOf() as number).toHex()
       const api = await getApi(paraWs.toString())
-      const signer = new Keyring({ type: 'sr25519' }).addFromUri(
-        `${process.env.PARA_CHAIN_SUDO_KEY || '//Dave'}`
+      const treasuryAccount = createAddress(TREASURY_PALLET_ID)
+      const statemineAccount = sovereignRelayOf(target.valueOf() as number)
+      const accept = relayApi.tx.hrmp.hrmpAcceptOpenChannel(source.valueOf() as number)
+      const configuration =
+        (await relayApi.query.configuration.activeConfig()) as unknown as PolkadotRuntimeParachainsConfigurationHostConfiguration
+      const open = relayApi.tx.hrmp.hrmpInitOpenChannel(
+        source.valueOf() as number,
+        configuration.hrmpChannelMaxCapacity,
+        configuration.hrmpChannelMaxMessageSize
       )
-      console.log(
-        api.tx.generalCouncil
-          .propose(
-            2,
-            api.tx.ormlXcm.sendAsSovereign(
-              {
-                V1: {
-                  parents: 1,
-                  interior: 'Here'
-                }
-              },
-              createXcm(`0x${encoded.slice(6)}`, sovereignRelayOf(target.valueOf() as number))
-            ),
-            1024
+      const encoded = api.tx.polkadotXcm
+        .send(
+          {
+            V1: {
+              parents: 1,
+              interior: 'Here'
+            }
+          },
+          createPaidXcm(
+            `0x${relayApi.tx.utility.batchAll([accept, open]).toHex().slice(6)}`,
+            treasuryAccount
           )
-          .toHex()
-      )
+        )
+        .toHex()
+
+      const final = relayApi.tx.utility.batchAll([
+        relayApi.tx.balances.forceTransfer(treasuryAccount, statemineAccount, '11000000000000'),
+        relayApi.tx.xcmPallet.send(
+          {
+            V1: {
+              parents: 0,
+              interior: {
+                X1: {
+                  Parachain: target.valueOf() as number
+                }
+              }
+            }
+          },
+          createUnpaidXcm(encoded)
+        )
+      ])
+
+      console.log(final.toHex())
+
       // .signAndSend(signer, { nonce: await nextNonce(api, signer) })
       // .then(() => process.exit(0))
       // .catch(err => {

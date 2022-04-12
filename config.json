@@ -84,6 +84,28 @@
           "basePath": "data/9948"
         }
       ]
+    },
+    {
+      "bin": "../binaries/polkadot-collator",
+      "id": 1000,
+      "chain": "statemine-dev",
+      "nodes": [
+        {
+          "wsPort": 9949,
+          "port": 30338,
+          "rpcPort": 9938,
+          "name": "alice",
+          "flags": [
+            "--state-cache-size",
+            "0",
+            "--",
+            "--execution=wasm",
+            "--state-cache-size",
+            "0"
+          ],
+          "basePath": "data/9949"
+        }
+      ]
     }
   ],
   "simpleParachains": [],

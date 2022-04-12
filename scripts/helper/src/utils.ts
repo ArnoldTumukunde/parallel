@@ -60,7 +60,7 @@ export const nextNonce = async (api: ApiPromise, signer: KeyringPair): Promise<I
   return await api.rpc.system.accountNextIndex(signer.address)
 }
 
-export const createXcm = (encoded: string, sovereignAccount: string) => {
+export const createPaidXcm = (encoded: string, sovereignAccount: string) => {
   return {
     V2: [
       {
@@ -103,6 +103,7 @@ export const createXcm = (encoded: string, sovereignAccount: string) => {
           }
         }
       },
+      'RefundSurplus',
       {
         DepositAsset: {
           assets: {
@@ -119,6 +120,22 @@ export const createXcm = (encoded: string, sovereignAccount: string) => {
                 }
               }
             }
+          }
+        }
+      }
+    ]
+  }
+}
+
+export const createUnpaidXcm = (encoded: string) => {
+  return {
+    V2: [
+      {
+        Transact: {
+          originType: 'Superuser',
+          requireWeightAtMost: '1000000000',
+          call: {
+            encoded
           }
         }
       }
