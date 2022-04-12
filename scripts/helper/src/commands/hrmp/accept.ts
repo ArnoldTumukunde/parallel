@@ -4,10 +4,12 @@ import {
   createUnpaidXcm,
   getApi,
   getRelayApi,
-  sovereignRelayOf
+  sovereignRelayOf,
+  XCM_FEE
 } from '../../utils'
 import { Command, CreateCommandParameters, program } from '@caporal/core'
 import { PolkadotRuntimeParachainsConfigurationHostConfiguration } from '@polkadot/types/lookup'
+import { BN } from '@polkadot/util'
 
 const TREASURY_PALLET_ID = 'py/trsry'
 
@@ -58,7 +60,15 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
         .toHex()
 
       const final = relayApi.tx.utility.batchAll([
-        relayApi.tx.balances.forceTransfer(treasuryAccount, statemineAccount, '10050000000000'),
+        relayApi.tx.balances.forceTransfer(
+          treasuryAccount,
+          statemineAccount,
+          configuration.hrmpSenderDeposit
+            .toBn()
+            .add(configuration.hrmpRecipientDeposit)
+            .add(new BN(XCM_FEE))
+            .toString()
+        ),
         relayApi.tx.xcmPallet.send(
           {
             V1: {

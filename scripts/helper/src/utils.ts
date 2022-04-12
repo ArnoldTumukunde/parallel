@@ -8,6 +8,7 @@ import { KeyringPair } from '@polkadot/keyring/types'
 import { Index } from '@polkadot/types/interfaces'
 
 const EMPTY_U8A_32 = new Uint8Array(32)
+export const XCM_FEE = 50000000000
 
 export const exec = (cmd: string): shell.ShellString => {
   console.log(`$ ${cmd}`)
@@ -73,7 +74,7 @@ export const createPaidXcm = (encoded: string, sovereignAccount: string) => {
               }
             },
             fun: {
-              Fungible: '50000000000'
+              Fungible: XCM_FEE.toString()
             }
           }
         ]
@@ -88,7 +89,7 @@ export const createPaidXcm = (encoded: string, sovereignAccount: string) => {
               }
             },
             fun: {
-              Fungible: '50000000000'
+              Fungible: XCM_FEE.toString()
             }
           },
           weightLimit: 'Unlimited'
