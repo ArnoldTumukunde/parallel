@@ -446,6 +446,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         reserve_in: BalanceOf<T, I>,
         reserve_out: BalanceOf<T, I>,
     ) -> Result<BalanceOf<T, I>, DispatchError> {
+        // TODO: Get delta here
+
         let fees = T::LpFee::get()
             .checked_add(&T::ProtocolFee::get())
             .map(|r| r.mul_floor(amount_in))
