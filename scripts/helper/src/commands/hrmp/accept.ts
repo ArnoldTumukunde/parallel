@@ -58,7 +58,7 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
         .toHex()
 
       const final = relayApi.tx.utility.batchAll([
-        relayApi.tx.balances.forceTransfer(treasuryAccount, statemineAccount, '11000000000000'),
+        relayApi.tx.balances.forceTransfer(treasuryAccount, statemineAccount, '10050000000000'),
         relayApi.tx.xcmPallet.send(
           {
             V1: {
@@ -75,12 +75,5 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
       ])
 
       console.log(final.toHex())
-
-      // .signAndSend(signer, { nonce: await nextNonce(api, signer) })
-      // .then(() => process.exit(0))
-      // .catch(err => {
-      //   logger.error(err.message)
-      //   process.exit(1)
-      // })
     })
 }
