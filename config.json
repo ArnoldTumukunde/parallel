@@ -1,7 +1,7 @@
 {
   "relaychain": {
     "bin": "../polkadot/target/release/polkadot",
-    "chain": "polkadot-local",
+    "chain": "kusama-local",
     "nodes": [
       {
         "name": "alice",
@@ -63,8 +63,8 @@
   "parachains": [
     {
       "bin": "./target/release/parallel",
-      "id": 2012,
-      "chain": "kerria-dev",
+      "id": 2085,
+      "chain": "vanilla-dev",
       "nodes": [
         {
           "wsPort": 9948,
@@ -84,10 +84,45 @@
           "basePath": "data/9948"
         }
       ]
+    },
+    {
+      "bin": "../binaries/gens",
+      "id": 2024,
+      "chain": "dev",
+      "nodes": [
+        {
+          "wsPort": 9949,
+          "port": 30338,
+          "rpcPort": 9938,
+          "name": "alice",
+          "flags": [
+            "--state-cache-size",
+            "0",
+            "--",
+            "--execution=wasm",
+            "--state-cache-size",
+            "0"
+          ],
+          "basePath": "data/9949"
+        }
+      ]
     }
   ],
   "simpleParachains": [],
-  "hrmpChannels": [],
+  "hrmpChannels": [
+    {
+      "sender": 2024,
+      "recipient": 2085,
+      "maxCapacity": 8,
+      "maxMessageSize": 512
+    },
+    {
+      "sender": 2085,
+      "recipient": 2024,
+      "maxCapacity": 8,
+      "maxMessageSize": 512
+    }
+  ],
   "types": {},
   "finalization": false
 }
