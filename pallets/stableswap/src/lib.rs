@@ -135,6 +135,8 @@ pub mod pallet {
         IdenticalAssets,
         /// Not an ideal price ratio
         NotAnIdealPrice,
+        /// Derivation calculation failure
+        UnableToCalculateDerivation,
     }
 
     #[pallet::event]
@@ -589,11 +591,16 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
             Self::do_get_liquidity(total_supply, pool, (ideal_base_amount, ideal_quote_amount))
                 .unwrap();
 
-        // update reserves after liquidity calculation
+        // update base amount
+        let init_base_amount = pool.base_amount;
+        let init_quote_amount = pool.quote_amount;
+
+        // new_quote_amount = pool.quote_amount + ideal_quote_amount
         pool.base_amount = pool
             .base_amount
             .checked_add(ideal_base_amount)
             .ok_or(ArithmeticError::Overflow)?;
+
         pool.quote_amount = pool
             .quote_amount
             .checked_add(ideal_quote_amount)
@@ -608,23 +615,63 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
             ensure!(d1 >= d0, Error::<T, I>::InvalidInvariant);
         }
         // TODO: the following may not required since fee is -> 0
-        // let ideal_base_balance = D1.clone() * pool.base_amount / D0.clone();
-        // let ideal_base_new_balance = ideal_base_amount;
-        //
-        // if ideal_base_balance >
-        // let ideal_base_new_balance_difference = (ideal_base_balance - ideal_base_new_balance).abs();
-        //
-        // let ideal_quote_balance = D1.clone() * pool.base_amount / D0;
-        // let ideal_quote_new_balance = ideal_quote_balance;
-        // let ideal_quote_new_balance_difference =
-        //     (ideal_base_balance - ideal_base_new_balance).abs();
 
-        // let D2 = Self::do_get_delta((base_asset, quote_asset)).unwrap();
-        // D2 and D1 in here will be the same
         if total_supply > 0 {
-            liquidity = liquidity * (d1 - d0) / d0;
+            // ****************************************************************
+            let _ideal_base_new_balance = d1
+                .checked_mul(init_base_amount)
+                .and_then(|r| r.checked_div(d0))
+                .ok_or(ArithmeticError::Underflow)?;
+
+            let _ideal_quote_new_balanced = d1
+                .checked_mul(init_quote_amount)
+                .and_then(|r| r.checked_div(d0))
+                .ok_or(ArithmeticError::Underflow)?;
+
+            // TODO: Write a macro helper
+            // What are the fees? --> 0? May be not required ?
+            // let base_diff = if ideal_base_new_balance > init_base_amount {
+            //     ideal_base_new_balance.checked_sub(init_base_amount)
+            //         .ok_or(ArithmeticError::Underflow)?;
+            // } else {
+            //     init_base_amount.checked_sub(ideal_base_new_balance)
+            //         .ok_or(ArithmeticError::Underflow)?;
+            // };
+            //
+            // let quote_diff = if ideal_quote_new_balance > init_quote_amount {
+            //     ideal_quote_new_balance.checked_sub(init_quote_amount)
+            //         .ok_or(ArithmeticError::Underflow)?;
+            // } else {
+            //     init_quote_amount.checked_sub(ideal_quote_new_balance)
+            //         .ok_or(ArithmeticError::Underflow)?;
+            // };
+            // ****************************************************************
+            // liquidity = liquidity + liquidity * (d1 - d0) / d0;
+            let minted = liquidity
+                .get_big_uint()
+                .checked_mul(
+                    &(d1.get_big_uint().checked_sub(&d0.get_big_uint()))
+                        .ok_or(Error::<T, I>::ConversionToU128Failed)?,
+                )
+                .and_then(|r| r.checked_div(&d0.get_big_uint()))
+                .ok_or(Error::<T, I>::ConversionToU128Failed)?
+                .to_u128()
+                .ok_or(ArithmeticError::Underflow)?;
+
+            liquidity = liquidity
+                .get_big_uint()
+                .checked_add(&minted.get_big_uint())
+                .ok_or(Error::<T, I>::ConversionToU128Failed)?
+                .to_u128()
+                .ok_or(ArithmeticError::Underflow)?;
         } else {
-            liquidity += d1;
+            // liquidity += d1;
+            liquidity = liquidity
+                .get_big_uint()
+                .checked_add(&d1.get_big_uint())
+                .ok_or(Error::<T, I>::ConversionToU128Failed)?
+                .to_u128()
+                .ok_or(ArithmeticError::Underflow)?;
         }
 
         T::Assets::mint_into(pool.lp_token_id, who, liquidity)?;
@@ -920,11 +967,11 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     }
 
     // Calculates delta based on amounts
+    // TODO: Move this to a helper function
     fn delta_util(
         tot_base_amount: BalanceOf<T, I>,
         tot_quote_amount: BalanceOf<T, I>,
     ) -> Result<Balance, DispatchError> {
-        // total = x + y = C
         let total_reserves = tot_base_amount
             .get_big_uint()
             .checked_add(&tot_quote_amount.get_big_uint())
@@ -932,130 +979,259 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
             .to_u128()
             .ok_or(ArithmeticError::Underflow)?;
 
-        // a = AC * Precision
-        let a: u128 = (T::AmplificationCoefficient::get() as u128)
+        if total_reserves == 0u128 {
+            return Ok(0u128);
+        }
+
+        // ********************************************************************
+        let amp_c = (T::AmplificationCoefficient::get() as u128)
             .get_big_uint()
-            .checked_mul(&T::Precision::get().get_big_uint())
+            .checked_mul(&T::NumTokens::get().into())
+            .and_then(|r| r.checked_mul(&T::NumTokens::get().into()))
             .ok_or(Error::<T, I>::ConversionToU128Failed)?
             .to_u128()
             .ok_or(ArithmeticError::Underflow)?;
 
-        let mut prev_d: u128;
+        let mut d_init = total_reserves.clone();
 
-        let mut d = total_reserves;
+        let base_am = tot_base_amount
+            .get_big_uint()
+            .checked_mul(&T::NumTokens::get().into())
+            .ok_or(Error::<T, I>::ConversionToU128Failed)?
+            .to_u128()
+            .ok_or(ArithmeticError::Underflow)?;
 
-        let n_a = a.checked_mul(2u128).ok_or(ArithmeticError::Overflow)?;
+        let quote_am = tot_quote_amount
+            .get_big_uint()
+            .checked_mul(&T::NumTokens::get().into())
+            .ok_or(Error::<T, I>::ConversionToU128Failed)?
+            .to_u128()
+            .ok_or(ArithmeticError::Underflow)?;
 
-        // 255 is a max number of loops
-        // should throw error if does not converge
         for _ in 0..255 {
-            let mut dp = d;
-
-            dp = dp
+            let mut d_i = d_init;
+            let amplification_coef_delta = amp_c
                 .get_big_uint()
-                .checked_mul(&d.get_big_uint())
-                .ok_or(Error::<T, I>::ConversionToU128Failed)?
-                .to_u128()
-                .ok_or(ArithmeticError::Underflow)?
-                .checked_div(
-                    tot_base_amount
-                        .get_big_uint()
-                        .checked_mul(&(T::NumTokens::get() as u128).get_big_uint())
-                        .ok_or(Error::<T, I>::ConversionToU128Failed)?
-                        .to_u128()
-                        .ok_or(ArithmeticError::Underflow)?,
-                )
+                .checked_mul(&d_init.get_big_uint())
+                .ok_or(Error::<T, I>::ConversionToU128Failed)?;
+
+            let d_numerator = d_i
+                .get_big_uint()
+                .checked_mul(&d_init.get_big_uint())
+                .ok_or(Error::<T, I>::ConversionToU128Failed)?;
+
+            d_i = d_numerator
+                // .and_then(|r| r.checked_div(&base_am.get_big_uint()))
+                .checked_div(&base_am.get_big_uint())
+                .and_then(|r| r.checked_mul(&d_init.get_big_uint()))
+                .and_then(|r| r.checked_div(&quote_am.get_big_uint()))
                 .ok_or(Error::<T, I>::ConversionToU128Failed)?
                 .to_u128()
                 .ok_or(ArithmeticError::Underflow)?;
 
-            dp = dp
+            // d_i = d_numerator
+            //     .and_then(|r| r.checked_div(&base_am))
+            //     .and_then(|r| r.checked_mul(&d_init))
+            //     .and_then(|r| r.checked_div(&quote_am))
+            //     .ok_or(Error::<T, I>::ConversionToU128Failed)?;
+
+            let d_prev = d_init.clone();
+            let d_prev_tokens = d_prev
+                .clone()
                 .get_big_uint()
-                .checked_mul(&d.get_big_uint())
-                .ok_or(Error::<T, I>::ConversionToU128Failed)?
-                .to_u128()
-                .ok_or(ArithmeticError::Underflow)?
-                .checked_div(
-                    tot_quote_amount
-                        .get_big_uint()
-                        .checked_mul(&(T::NumTokens::get() as u128).get_big_uint())
-                        .ok_or(Error::<T, I>::ConversionToU128Failed)?
-                        .to_u128()
-                        .ok_or(ArithmeticError::Underflow)?,
-                )
-                .ok_or(Error::<T, I>::ConversionToU128Failed)?
-                .to_u128()
-                .ok_or(ArithmeticError::Underflow)?;
+                .checked_mul(&(T::NumTokens::get() as u128).get_big_uint())
+                .ok_or(Error::<T, I>::ConversionToU128Failed)?;
 
-            prev_d = d;
+            // let d_prev_tokens = d_prev.clone()
+            //     .checked_mul(&(T::NumTokens::get() as u128).get_big_uint())
+            //     .ok_or(Error::<T, I>::ConversionToU128Failed)?;
 
-            // d = ((((n_a * s) / a_precision) + (dp * n_t)) * d)
-            //     / ((((n_a - a_precision) * d) / a_precision) + ((n_t + 1) * dp));
-            let k = dp
-                .checked_mul(T::NumTokens::get().into())
-                .ok_or(ArithmeticError::Overflow)?;
-
-            let m = n_a
+            let numerator = amp_c
                 .get_big_uint()
                 .checked_mul(&total_reserves.get_big_uint())
-                .and_then(|r| r.checked_div(&T::Precision::get().get_big_uint()))
-                .and_then(|r| r.checked_add(&k.get_big_uint()))
+                .and_then(|r| r.checked_add(&d_prev_tokens))
+                .and_then(|r| r.checked_mul(&d_init.get_big_uint()))
+                .ok_or(Error::<T, I>::ConversionToU128Failed)?;
+
+            // let numerator = amp_c
+            //     .checked_mul(&total_reserves)
+            //     .and_then(|r| r.checked_add(&d_prev_tokens))
+            //     .and_then(|r| r.checked_mul(&d_init))
+            //     .ok_or(Error::<T, I>::ConversionToU128Failed)?;
+
+            let denominator = amplification_coef_delta
+                .checked_add(
+                    &((T::NumTokens::get() as u128)
+                        .get_big_uint()
+                        .checked_add(&1u128.get_big_uint())
+                        .ok_or(Error::<T, I>::ConversionToU128Failed)?),
+                )
+                .and_then(|r| r.checked_mul(&d_i.get_big_uint()))
+                .and_then(|r| r.checked_mul(&d_init.get_big_uint()))
+                .ok_or(Error::<T, I>::ConversionToU128Failed)?;
+            // let denominator = amplification_coef_delta
+            //     .checked_add(
+            //         &(
+            //             (T::NumTokens::get() as u128).get_big_uint()
+            //                 .checked_add(&1u128.get_big_uint())
+            //                 .ok_or(Error::<T, I>::ConversionToU128Failed)?
+            //         )
+            //     )
+            //     .and_then(|r| r.checked_mul(&d_i))
+            //     .and_then(|r| r.checked_mul(&d_init))
+            //     .ok_or(Error::<T, I>::ConversionToU128Failed)?;
+
+            let _na = numerator.to_u128().ok_or(ArithmeticError::Underflow)?;
+            let _da = denominator.to_u128().ok_or(ArithmeticError::Underflow)?;
+
+            d_init = numerator
+                .checked_div(&denominator)
                 .ok_or(Error::<T, I>::ConversionToU128Failed)?
                 .to_u128()
                 .ok_or(ArithmeticError::Underflow)?;
+            // d_init = numerator.checked_div(&denominator)
+            //     .ok_or(Error::<T, I>::ConversionToU128Failed)?;
 
-            let n = n_a
-                .get_big_uint()
-                .checked_sub(&T::Precision::get().get_big_uint())
-                .and_then(|r| r.checked_mul(&d.get_big_uint()))
-                .ok_or(Error::<T, I>::ConversionToU128Failed)?
-                .to_u128()
-                .ok_or(ArithmeticError::Underflow)?;
-
-            let u = n
-                .get_big_uint()
-                .checked_div(&T::Precision::get().get_big_uint())
-                .ok_or(Error::<T, I>::ConversionToU128Failed)?
-                .to_u128()
-                .ok_or(ArithmeticError::Underflow)?;
-
-            let l = (T::NumTokens::get() as u128)
-                .checked_add(1u128)
-                .ok_or(ArithmeticError::Overflow)?
-                .get_big_uint()
-                .checked_mul(&dp.get_big_uint())
-                .ok_or(Error::<T, I>::ConversionToU128Failed)?
-                .to_u128()
-                .ok_or(ArithmeticError::Underflow)?;
-
-            let _denom = u
-                .get_big_uint()
-                .checked_add(&l.get_big_uint())
-                .ok_or(Error::<T, I>::ConversionToU128Failed)?
-                .to_u128()
-                .ok_or(ArithmeticError::Underflow)?;
-
-            d = m
-                .get_big_uint()
-                .checked_mul(&d.get_big_uint())
-                .and_then(|r| r.checked_div(&_denom.get_big_uint()))
-                .ok_or(Error::<T, I>::ConversionToU128Failed)?
-                .to_u128()
-                .ok_or(ArithmeticError::Underflow)?;
-
-            // check if difference is less than 1
-            if d > prev_d {
-                if d - prev_d < 1 {
-                    break;
+            if d_init > d_prev {
+                if d_init - d_prev <= 1 {
+                    return Ok(d_init);
                 }
-            } else if prev_d - d < 1 {
-                break;
+            } else if d_prev - d_init <= 1 {
+                return Ok(d_init);
             }
+            // if d_init.eq(&d_prev) {
+            //     return Ok(d_init)
+            // }
         }
-        Ok(d)
+        Err(Error::<T, I>::UnableToCalculateDerivation.into())
+
+        // ********************************************************************
+
+        // a = AC * Precision
+        // let a: u128 = (T::AmplificationCoefficient::get() as u128)
+        //     .get_big_uint()
+        //     .checked_mul(&T::Precision::get().get_big_uint())
+        //     .ok_or(Error::<T, I>::ConversionToU128Failed)?
+        //     .to_u128()
+        //     .ok_or(ArithmeticError::Underflow)?;
+        //
+        // let mut prev_d: u128;
+        //
+        // let mut d = total_reserves;
+        //
+        // let n_a = a.checked_mul(2u128).ok_or(ArithmeticError::Overflow)?;
+        //
+        // // 255 is a max number of loops
+        // // should throw error if does not converge
+        // for _ in 0..255 {
+        //     let mut dp = d;
+        //
+        //     dp = dp
+        //         .get_big_uint()
+        //         .checked_mul(&d.get_big_uint())
+        //         .ok_or(Error::<T, I>::ConversionToU128Failed)?
+        //         .to_u128()
+        //         .ok_or(ArithmeticError::Underflow)?
+        //         .checked_div(
+        //             tot_base_amount
+        //                 .get_big_uint()
+        //                 .checked_mul(&(T::NumTokens::get() as u128).get_big_uint())
+        //                 .ok_or(Error::<T, I>::ConversionToU128Failed)?
+        //                 .to_u128()
+        //                 .ok_or(ArithmeticError::Underflow)?,
+        //         )
+        //         .ok_or(Error::<T, I>::ConversionToU128Failed)?
+        //         .to_u128()
+        //         .ok_or(ArithmeticError::Underflow)?;
+        //
+        //     dp = dp
+        //         .get_big_uint()
+        //         .checked_mul(&d.get_big_uint())
+        //         .ok_or(Error::<T, I>::ConversionToU128Failed)?
+        //         .to_u128()
+        //         .ok_or(ArithmeticError::Underflow)?
+        //         .checked_div(
+        //             tot_quote_amount
+        //                 .get_big_uint()
+        //                 .checked_mul(&(T::NumTokens::get() as u128).get_big_uint())
+        //                 .ok_or(Error::<T, I>::ConversionToU128Failed)?
+        //                 .to_u128()
+        //                 .ok_or(ArithmeticError::Underflow)?,
+        //         )
+        //         .ok_or(Error::<T, I>::ConversionToU128Failed)?
+        //         .to_u128()
+        //         .ok_or(ArithmeticError::Underflow)?;
+        //
+        //     prev_d = d;
+        //
+        //     // d = ((((n_a * s) / a_precision) + (dp * n_t)) * d)
+        //     //     / ((((n_a - a_precision) * d) / a_precision) + ((n_t + 1) * dp));
+        //     let k = dp
+        //         .checked_mul(T::NumTokens::get().into())
+        //         .ok_or(ArithmeticError::Overflow)?;
+        //
+        //     let m = n_a
+        //         .get_big_uint()
+        //         .checked_mul(&total_reserves.get_big_uint())
+        //         .and_then(|r| r.checked_div(&T::Precision::get().get_big_uint()))
+        //         .and_then(|r| r.checked_add(&k.get_big_uint()))
+        //         .ok_or(Error::<T, I>::ConversionToU128Failed)?
+        //         .to_u128()
+        //         .ok_or(ArithmeticError::Underflow)?;
+        //
+        //     let n = n_a
+        //         .get_big_uint()
+        //         .checked_sub(&T::Precision::get().get_big_uint())
+        //         .and_then(|r| r.checked_mul(&d.get_big_uint()))
+        //         .ok_or(Error::<T, I>::ConversionToU128Failed)?
+        //         .to_u128()
+        //         .ok_or(ArithmeticError::Underflow)?;
+        //
+        //     let u = n
+        //         .get_big_uint()
+        //         .checked_div(&T::Precision::get().get_big_uint())
+        //         .ok_or(Error::<T, I>::ConversionToU128Failed)?
+        //         .to_u128()
+        //         .ok_or(ArithmeticError::Underflow)?;
+        //
+        //     let l = (T::NumTokens::get() as u128)
+        //         .checked_add(1u128)
+        //         .ok_or(ArithmeticError::Overflow)?
+        //         .get_big_uint()
+        //         .checked_mul(&dp.get_big_uint())
+        //         .ok_or(Error::<T, I>::ConversionToU128Failed)?
+        //         .to_u128()
+        //         .ok_or(ArithmeticError::Underflow)?;
+        //
+        //     let _denom = u
+        //         .get_big_uint()
+        //         .checked_add(&l.get_big_uint())
+        //         .ok_or(Error::<T, I>::ConversionToU128Failed)?
+        //         .to_u128()
+        //         .ok_or(ArithmeticError::Underflow)?;
+        //
+        //     d = m
+        //         .get_big_uint()
+        //         .checked_mul(&d.get_big_uint())
+        //         .and_then(|r| r.checked_div(&_denom.get_big_uint()))
+        //         .ok_or(Error::<T, I>::ConversionToU128Failed)?
+        //         .to_u128()
+        //         .ok_or(ArithmeticError::Underflow)?;
+        //
+        //     // check if difference is less than 1
+        //     if d > prev_d {
+        //         if d - prev_d < 1 {
+        //             break;
+        //         }
+        //     } else if prev_d - d < 1 {
+        //         break;
+        //     }
+        // }
+        // Ok(d)
     }
 
     // Calculates delta on the fly
+    // TODO: Amplification coefficient is a constant
     #[allow(dead_code)]
     pub fn do_get_delta_on_the_fly(
         (tot_base_amount, tot_quote_amount): (Balance, Balance),
