@@ -59,30 +59,32 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
         )
         .toHex()
 
-      const final = relayApi.tx.utility.batchAll([
-        relayApi.tx.balances.forceTransfer(
-          treasuryAccount,
-          statemineAccount,
-          configuration.hrmpSenderDeposit
-            .toBn()
-            .add(configuration.hrmpRecipientDeposit)
-            .add(new BN(XCM_FEE))
-            .toString()
-        ),
-        relayApi.tx.xcmPallet.send(
-          {
-            V1: {
-              parents: 0,
-              interior: {
-                X1: {
-                  Parachain: target.valueOf() as number
+      const final = relayApi.tx.sudo.sudo(
+        relayApi.tx.utility.batchAll([
+          relayApi.tx.balances.forceTransfer(
+            treasuryAccount,
+            statemineAccount,
+            configuration.hrmpSenderDeposit
+              .toBn()
+              .add(configuration.hrmpRecipientDeposit)
+              .add(new BN(XCM_FEE))
+              .toString()
+          ),
+          relayApi.tx.xcmPallet.send(
+            {
+              V1: {
+                parents: 0,
+                interior: {
+                  X1: {
+                    Parachain: target.valueOf() as number
+                  }
                 }
               }
-            }
-          },
-          createUnpaidXcm(`0x${encoded.slice(8)}`)
-        )
-      ])
+            },
+            createUnpaidXcm(`0x${encoded.slice(8)}`)
+          )
+        ])
+      )
 
       console.log(final.toHex())
     })
