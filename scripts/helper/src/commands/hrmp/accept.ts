@@ -10,6 +10,7 @@ import {
 import { Command, CreateCommandParameters, program } from '@caporal/core'
 import { PolkadotRuntimeParachainsConfigurationHostConfiguration } from '@polkadot/types/lookup'
 import { BN } from '@polkadot/util'
+import { blake2AsU8a } from '@polkadot/util-crypto'
 
 const TREASURY_PALLET_ID = 'py/trsry'
 
@@ -59,8 +60,8 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
         )
         .toHex()
 
-      const final = relayApi.tx.sudo.sudo(
-        relayApi.tx.utility.batchAll([
+      const data = relayApi.tx.utility
+        .batchAll([
           relayApi.tx.balances.forceTransfer(
             treasuryAccount,
             statemineAccount,
@@ -84,8 +85,14 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
             createUnpaidXcm(`0x${encoded.slice(8)}`)
           )
         ])
-      )
+        .method.toHex()
 
-      console.log(final.toHex())
+      const hash = blake2AsU8a(data, 256)
+      const call = relayApi.tx.utility.batchAll([
+        relayApi.tx.democracy.notePreimage(data),
+        relayApi.tx.democracy.propose(hash, relayApi.consts.democracy.minimumDeposit)
+      ])
+
+      console.log(call.toHex())
     })
 }
