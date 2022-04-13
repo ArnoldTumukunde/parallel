@@ -1,7 +1,7 @@
 {
   "relaychain": {
     "bin": "../polkadot/target/release/polkadot",
-    "chain": "polkadot-local",
+    "chain": "kusama-local",
     "nodes": [
       {
         "name": "alice",
@@ -63,8 +63,8 @@
   "parachains": [
     {
       "bin": "./target/release/parallel",
-      "id": 2012,
-      "chain": "kerria-dev",
+      "id": 2085,
+      "chain": "vanilla-dev",
       "nodes": [
         {
           "wsPort": 9948,
