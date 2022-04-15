@@ -766,7 +766,7 @@ fn test_set_staking_ledger_work() {
             ),
             Error::<Test>::InvalidProof
         );
-        LiquidStaking::on_finalize(1);
+        LiquidStaking::on_initialize(1);
         assert_ok!(LiquidStaking::set_staking_ledger(
             Origin::signed(ALICE),
             derivative_index,
@@ -774,17 +774,7 @@ fn test_set_staking_ledger_work() {
             get_mock_proof_bytes()
         ));
 
-        assert_noop!(
-            LiquidStaking::set_staking_ledger(
-                Origin::signed(ALICE),
-                derivative_index,
-                staking_ledger.clone(),
-                get_mock_proof_bytes()
-            ),
-            Error::<Test>::StakingLedgerLocked
-        );
-
-        LiquidStaking::on_finalize(1);
+        LiquidStaking::on_initialize(1);
         assert_eq!(
             LiquidStaking::staking_ledger(derivative_index)
                 .unwrap()
@@ -892,7 +882,7 @@ fn test_verify_merkle_proof_work() {
         let key = LiquidStaking::get_staking_ledger_key(derivative_index);
         let value = staking_ledger.encode();
         assert_eq!(hex::encode(&value), MOCK_DATA);
-        LiquidStaking::on_finalize(1);
+        LiquidStaking::on_initialize(1);
         assert!(LiquidStaking::verify_merkle_proof(
             key,
             value,

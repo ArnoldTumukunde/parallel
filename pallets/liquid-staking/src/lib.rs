@@ -266,8 +266,6 @@ pub mod pallet {
         AlreadyBonded,
         /// Can not schedule more unlock chunks.
         NoMoreChunks,
-        /// Staking ledger is locked due to mutation in notification_received
-        StakingLedgerLocked,
         /// Not withdrawn unbonded yet
         NotWithdrawn,
         /// Cannot have a nominator role with value less than the minimum defined by
@@ -281,15 +279,6 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn exchange_rate)]
     pub type ExchangeRate<T: Config> = StorageValue<_, Rate, ValueQuery>;
-
-    /// ValidationData of previous block
-    ///
-    /// This is needed since validation data from cumulus_pallet_parachain_system
-    /// will be updated in set_validation_data Inherent which happens before external
-    /// extrinsics
-    #[pallet::storage]
-    #[pallet::getter(fn validation_data)]
-    pub type ValidationData<T: Config> = StorageValue<_, PersistedValidationData, OptionQuery>;
 
     /// Fraction of reward currently set aside for reserves.
     #[pallet::storage]
@@ -344,11 +333,6 @@ pub mod pallet {
         StakingLedger<T::AccountId, BalanceOf<T>>,
         OptionQuery,
     >;
-
-    /// Set to true if staking ledger has been modified in this block
-    #[pallet::storage]
-    #[pallet::getter(fn is_updated)]
-    pub type IsUpdated<T: Config> = StorageMap<_, Twox64Concat, DerivativeIndex, bool, ValueQuery>;
 
     /// DefaultVersion is using for initialize the StorageVersion
     #[pallet::type_value]
@@ -721,7 +705,8 @@ pub mod pallet {
         #[transactional]
         pub fn force_set_current_era(origin: OriginFor<T>, era: EraIndex) -> DispatchResult {
             T::UpdateOrigin::ensure_origin(origin)?;
-            CurrentEra::<T>::put(era);
+            let offset = era.saturating_sub(Self::current_era());
+            Self::do_advance_era(offset)?;
             Ok(())
         }
 
@@ -750,10 +735,6 @@ pub mod pallet {
             T::UpdateOrigin::ensure_origin(origin)?;
 
             Self::do_update_ledger(derivative_index, |ledger| {
-                ensure!(
-                    !Self::is_updated(derivative_index),
-                    Error::<T>::StakingLedgerLocked
-                );
                 *ledger = staking_ledger;
                 Ok(())
             })?;
@@ -797,10 +778,6 @@ pub mod pallet {
             Self::ensure_origin(origin)?;
 
             Self::do_update_ledger(derivative_index, |ledger| {
-                ensure!(
-                    !Self::is_updated(derivative_index),
-                    Error::<T>::StakingLedgerLocked
-                );
                 ensure!(
                     ledger.active >= T::MinNominatorBond::get(),
                     Error::<T>::InsufficientBond
@@ -857,13 +834,6 @@ pub mod pallet {
                     )
                 }
             })
-        }
-
-        fn on_finalize(_n: T::BlockNumber) {
-            IsUpdated::<T>::remove_all(None);
-            if let Some(data) = T::RelayChainValidationDataProvider::validation_data() {
-                ValidationData::<T>::put(data);
-            }
         }
     }
 
@@ -1480,7 +1450,6 @@ pub mod pallet {
             StakingLedgers::<T>::try_mutate(derivative_index, |ledger| -> DispatchResult {
                 let ledger = ledger.as_mut().ok_or(Error::<T>::NotBonded)?;
                 cb(ledger)?;
-                IsUpdated::<T>::insert(derivative_index, true);
                 Self::deposit_event(Event::<T>::StakingLedgerUpdated(
                     derivative_index,
                     ledger.clone(),
@@ -1576,7 +1545,7 @@ pub mod pallet {
             value: Vec<u8>,
             proof: Vec<Vec<u8>>,
         ) -> bool {
-            let validation_data = Self::validation_data();
+            let validation_data = T::RelayChainValidationDataProvider::validation_data();
             if validation_data.is_none() {
                 return false;
             }
