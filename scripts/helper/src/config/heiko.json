@@ -96,6 +96,20 @@
       "balances": []
     },
     {
+      "name": "Parallel LP-KSM/sKSM",
+      "symbol": "LP-KSM/sKSM",
+      "assetId": 5003,
+      "decimal": 12,
+      "balances": []
+    },
+    {
+      "name": "Parallel LP-KSM/cKSM-0/7",
+      "symbol": "LP-KSM/cKSM-0/7",
+      "assetId": 5004,
+      "decimal": 12,
+      "balances": []
+    },
+    {
       "name": "Shiden",
       "symbol": "SDN",
       "assetId": 111,
@@ -221,6 +235,18 @@
       "liquidityAmounts": ["10000000000000000", "30000000000000000000"],
       "lptokenReceiver": "5HHMY7e8UAqR5ZaHGaQnRW5EDR8dP7QpAyjeBu6V7vdXxxbf",
       "liquidityProviderToken": 5002
+    },
+    {
+      "pool": [1000, 100],
+      "liquidityAmounts": ["50000000000000", "50000000000000"],
+      "lptokenReceiver": "5HHMY7e8UAqR5ZaHGaQnRW5EDR8dP7QpAyjeBu6V7vdXxxbf",
+      "liquidityProviderToken": 5003
+    },
+    {
+      "pool": [4000, 100],
+      "liquidityAmounts": ["50000000000000", "50000000000000"],
+      "lptokenReceiver": "5HHMY7e8UAqR5ZaHGaQnRW5EDR8dP7QpAyjeBu6V7vdXxxbf",
+      "liquidityProviderToken": 5004
     }
   ],
   "crowdloans": [
@@ -234,7 +260,8 @@
       "endBlock": 28800,
       "leaseStart": 0,
       "leaseEnd": 7,
-      "pending": false
+      "phase": "Succeeded",
+      "contributions": [["5HHMY7e8UAqR5ZaHGaQnRW5EDR8dP7QpAyjeBu6V7vdXxxbf", "100000000000000"]]
     },
     {
       "paraId": 2016,
@@ -246,7 +273,8 @@
       "endBlock": 43200,
       "leaseStart": 0,
       "leaseEnd": 7,
-      "pending": true
+      "phase": "Pending",
+      "contributions": []
     },
     {
       "paraId": 2100,
@@ -258,7 +286,8 @@
       "endBlock": 202800,
       "leaseStart": 0,
       "leaseEnd": 7,
-      "pending": false
+      "phase": "Contributing",
+      "contributions": []
     }
   ],
   "bridge": {
@@ -321,5 +350,17 @@
       "rewardAmount": "2000000000000000",
       "rewardDuration": "50400"
     }
-  ]
+  ],
+  "nominations": [
+    {
+      "derivativeIndex": 0,
+      "validators": [
+        "5DZnGRAr28KP4GvbuxW2cBNo9Aodcm4QKUMj3Zqj67YjYStr",
+        "5FeD15uf7x3BhWEnYwUDrwqodsyW5K3ofHeqwGn1omfQavbR",
+        "5CAXipknkaKzpf2Pqh9Tmq1uBSkBxDBeHcEqpepyPnmELDZc",
+        "5Coj1TfitxC6dgpi78T5BcHjRR3M2tc6XZTjvSSifxuSoByU"
+      ]
+    }
+  ],
+  "stakes": [["5HHMY7e8UAqR5ZaHGaQnRW5EDR8dP7QpAyjeBu6V7vdXxxbf", "100000000000000"]]
 }

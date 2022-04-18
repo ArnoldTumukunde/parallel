@@ -52,44 +52,50 @@ async function para({ logger, options: { paraWs, network } }: ActionParameters) 
     leaseEnd,
     cap,
     endBlock,
-    pending
+    phase,
+    contributions
   } of config.crowdloans) {
     call.push(
       api.tx.sudo.sudo(
         api.tx.crowdloans.createVault(paraId, ctokenId, leaseStart, leaseEnd, 'XCM', cap, endBlock)
       )
     )
-    if (!pending) {
+    if (phase !== 'Pending') {
       call.push(api.tx.sudo.sudo(api.tx.crowdloans.open(paraId)))
     }
-  }
-
-  for (const { pool, liquidityAmounts, lptokenReceiver, liquidityProviderToken } of config.pools) {
-    call.push(
-      api.tx.sudo.sudo(
-        api.tx.amm.createPool(pool, liquidityAmounts, lptokenReceiver, liquidityProviderToken)
-      )
-    )
+    for (const [contributor, amount] of contributions) {
+      call.push(api.tx.sudo.sudoAs(contributor, api.tx.crowdloans.contribute(paraId, amount, null)))
+    }
+    if (phase === 'Succeeded') {
+      call.push(api.tx.sudo.sudo(api.tx.crowdloans.close(paraId)))
+      call.push(api.tx.sudo.sudo(api.tx.crowdloans.auctionSucceeded(paraId)))
+      for (const [contributor] of contributions) {
+        call.push(
+          api.tx.sudo.sudoAs(contributor, api.tx.crowdloans.claim(paraId, leaseStart, leaseEnd))
+        )
+      }
+    }
   }
 
   const { members, chainIds, bridgeTokens } = config.bridge
   members.forEach(member => call.push(api.tx.sudo.sudo(api.tx.bridgeMembership.addMember(member))))
   chainIds.forEach(chainId => call.push(api.tx.sudo.sudo(api.tx.bridge.registerChain(chainId))))
-  bridgeTokens.map(({ assetId, id, external, fee, enable, outCap, outAmount, inCap, inAmount }) =>
-    call.push(
-      api.tx.sudo.sudo(
-        api.tx.bridge.registerBridgeToken(assetId, {
-          id,
-          external,
-          fee,
-          enable,
-          outCap,
-          outAmount,
-          inCap,
-          inAmount
-        })
+  bridgeTokens.forEach(
+    ({ assetId, id, external, fee, enable, outCap, outAmount, inCap, inAmount }) =>
+      call.push(
+        api.tx.sudo.sudo(
+          api.tx.bridge.registerBridgeToken(assetId, {
+            id,
+            external,
+            fee,
+            enable,
+            outCap,
+            outAmount,
+            inCap,
+            inAmount
+          })
+        )
       )
-    )
   )
 
   call.push(
@@ -98,6 +104,13 @@ async function para({ logger, options: { paraWs, network } }: ActionParameters) 
     api.tx.sudo.sudo(api.tx.liquidStaking.forceSetCurrentEra(3)),
     api.tx.balances.transfer(createAddress(GiftPalletId), config.gift)
   )
+  for (const [staker, amount] of config.stakes) {
+    call.push(api.tx.sudo.sudoAs(staker, api.tx.liquidStaking.stake(amount)))
+  }
+  call.push(api.tx.sudo.sudo(api.tx.liquidStaking.forceMatching()))
+  for (const { derivativeIndex, validators } of config.nominations) {
+    call.push(api.tx.sudo.sudo(api.tx.liquidStaking.nominate(derivativeIndex, validators)))
+  }
 
   for (const {
     assetId,
@@ -122,6 +135,14 @@ async function para({ logger, options: { paraWs, network } }: ActionParameters) 
           rewardAmount,
           rewardDuration
         )
+      )
+    )
+  }
+
+  for (const { pool, liquidityAmounts, lptokenReceiver, liquidityProviderToken } of config.pools) {
+    call.push(
+      api.tx.sudo.sudo(
+        api.tx.amm.createPool(pool, liquidityAmounts, lptokenReceiver, liquidityProviderToken)
       )
     )
   }
