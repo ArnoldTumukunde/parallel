@@ -33,7 +33,7 @@ build:
 .PHONY: build-release
 build-release:
 	cargo build --workspace --exclude runtime-integration-tests --bin parallel --release  --features runtime-benchmarks --features try-runtime
-	
+
 .PHONY: clean
 clean:
 	cargo clean -p parallel -p vanilla-runtime -p kerria-runtime -p heiko-runtime -p parallel-runtime
@@ -97,13 +97,14 @@ bench-liquid-staking:
 bench-amm-router:
 	cargo run --release --features runtime-benchmarks -- benchmark --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-router --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/router/src/weights.rs
 
-.PHONY: bench-asset-manager
-bench-asset-manager:
-	cargo run --release --features runtime-benchmarks -- benchmark --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-asset-manager --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/asset-manager/src/weights.rs
 
-.PHONY: bench-payroll
-bench-payroll:
-	cargo run --release --features runtime-benchmarks -- benchmark --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-payroll --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/payroll/src/weights.rs
+.PHONY: bench-streaming
+bench-streaming:
+	cargo run --release --features runtime-benchmarks -- benchmark --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-streaming --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/stream/src/weights.rs
+
+.PHONY: bench-asset-registry
+bench-asset-registry:
+	cargo run --release --features runtime-benchmarks -- benchmark --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-asset-registry --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/asset-registry/src/weights.rs
 
 .PHONY: lint
 lint:
@@ -147,12 +148,10 @@ launch: shutdown
 	yq -i eval '.parachains[0].image = "parallelfinance/parallel:$(DOCKER_TAG)"' $(LAUNCH_CONFIG_YAML)
 	yq -i eval '.parachains[0].id = $(PARA_ID)' $(LAUNCH_CONFIG_YAML)
 	yq -i eval '.parachains[0].chain.base = "$(CHAIN)"' $(LAUNCH_CONFIG_YAML)
-	yq -i eval '.services["oracle-client"].environment.PARA_ID = $(PARA_ID)' $(DOCKER_OVERRIDE_YAML)
 	docker image pull parallelfinance/polkadot:$(RELAY_DOCKER_TAG)
 	docker image pull parallelfinance/parallel:$(DOCKER_TAG)
 	docker image pull parallelfinance/stake-client:latest
 	docker image pull parallelfinance/liquidation-client:latest
-	docker image pull parallelfinance/nominate-client:latest
 	docker image pull parallelfinance/oracle-client:latest
 	docker image pull parallelfinance/heiko-dapp:latest
 	docker image pull parallelfinance/parallel-dapp:latest
@@ -160,12 +159,8 @@ launch: shutdown
 		&& (cp -r keystore* output || true) \
 		&& cp docker-compose.override.yml output \
 		&& cd output \
-		&& DOCKER_CLIENT_TIMEOUT=180 COMPOSE_HTTP_TIMEOUT=180 docker-compose up -d --build
+		&& DOCKER_CLIENT_TIMEOUT=1080 COMPOSE_HTTP_TIMEOUT=1080 PARA_ID=$(PARA_ID) docker-compose up -d --build
 	cd scripts/helper && yarn start launch --network $(CHAIN)
-
-.PHONY: launch-kerria
-launch-kerria:
-	make PARA_ID=2012 CHAIN=kerria-dev RELAY_CHAIN=polkadot-local launch
 
 .PHONY: launch-vanilla
 launch-vanilla:

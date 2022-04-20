@@ -38,6 +38,7 @@ pub const PHA: CurrencyId = 115;
 pub const KMA: CurrencyId = 116;
 pub const KINT: CurrencyId = 118;
 pub const KBTC: CurrencyId = 119;
+pub const GENS: CurrencyId = 120;
 
 // Ethereum ecosystem
 pub const EUSDT: CurrencyId = 201;
@@ -73,15 +74,20 @@ pub const LP_USDT_HKO: CurrencyId = 5000;
 pub const LP_KSM_USDT: CurrencyId = 5001;
 pub const LP_KSM_HKO: CurrencyId = 5002;
 pub const LP_KSM_SKSM: CurrencyId = 5003;
+pub const LP_KSM_CKSM_20_27: CurrencyId = 5004;
 
 pub const LP_USDT_PARA: CurrencyId = 6000;
 pub const LP_DOT_USDT: CurrencyId = 6001;
 pub const LP_DOT_PARA: CurrencyId = 6002;
 pub const LP_DOT_SDOT: CurrencyId = 6003;
+pub const LP_DOT_CDOT_6_13: CurrencyId = 6004;
+pub const LP_DOT_CDOT_7_14: CurrencyId = 6005;
+pub const LP_PARA_CDOT_6_13: CurrencyId = 6006;
 
 // Crowdloan Derivative
 pub const CKSM_15_22: CurrencyId = 100150022;
 pub const CKSM_20_27: CurrencyId = 100200027;
+pub const CKSM_21_28: CurrencyId = 100210028;
 pub const CDOT_6_13: CurrencyId = 200060013;
 pub const CDOT_7_14: CurrencyId = 200070014;
 pub const CDOT_8_15: CurrencyId = 200080015;
@@ -106,6 +112,7 @@ pub const CDOT_8_15: CurrencyId = 200080015;
 // | Heiko     | KMA          | N/A                |
 // | Heiko     | KINT         | N/A                |
 // | Heiko     | KBTC         | N/A                |
+// | Heiko     | GENS         | N/A                |
 // | Heiko     | PHKO         | N/A                |
 // | Heiko     | PKSM         | N/A                |
 // | Heiko     | PUSDT        | N/A                |
