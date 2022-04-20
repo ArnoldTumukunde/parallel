@@ -108,3 +108,18 @@ pub trait DistributionStrategy<Balance> {
         min_nominator_bond: Balance,
     ) -> Vec<(DerivativeIndex, Balance)>;
 }
+
+/// Exported traits from our Loans pallet
+pub trait MoneyMarket<AccountId, CurrencyId, Balance> {
+    fn stream_borrow(
+        asset_id: CurrencyId,
+        borrower: AccountId,
+        borrow_amount: Balance,
+    ) -> Result<(), DispatchError>;
+
+    fn stream_repay(
+        asset_id: CurrencyId,
+        borrower: AccountId,
+        repay_amount: Balance,
+    ) -> Result<(Balance, Balance), DispatchError>;
+}

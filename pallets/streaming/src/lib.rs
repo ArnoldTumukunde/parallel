@@ -306,6 +306,56 @@ pub mod pallet {
             ));
             Ok(().into())
         }
+
+        #[pallet::weight((<T as Config>::WeightInfo::withdraw_from_stream(), DispatchClass::Operational))]
+        #[transactional]
+        pub fn borrow_from_stream(
+            origin: OriginFor<T>,
+            stream_id: StreamId,
+            borrow_amount: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+            //1, check ownership of the stream
+            //2, if this is the first borrow of the stream,
+            //2.1, claim the unlock portion and transfer to user
+            //2.2, calculate the remaining value of the stream and max borrow amount, make sure  borrow_amount <= max borrow amount
+            //2.3, call loans.stream_borrow(stream.currency_id, borrower, borrow_amount)
+            //2.4, mark the stream as collateral
+            //3, if this is not the first borrow of the stream,
+            //3.1, claim the unlock amount and call (actual_repay_amount, remain_borrow_amount) = loans.stream_repay(stream.currency_id, borrower, unlock amount)
+            //3.2, if actual_repay_amount < unlock amount, transfer (unlock amount - actual_repay_amount) to borrower,
+            //3.2, calculate the remaining value of the stream and max borrow amount, make sure  borrow_amount <= max borrow amount
+            //3.3, call loans.stream_borrow(stream.currency_id, borrower, borrow_amount)
+            Ok(().into())
+        }
+
+        #[pallet::weight((<T as Config>::WeightInfo::withdraw_from_stream(), DispatchClass::Operational))]
+        #[transactional]
+        pub fn repay_from_stream(
+            origin: OriginFor<T>,
+            stream_id: StreamId,
+            amount: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+            //1, check ownership of the stream and mark as collateral
+            //2, calculate and claim the unlock amount and transfer to user. // token will be transfer back to MM account when calling loans.stream_repay
+            //3, (actual_repay_amount, remain_borrow_amount) = loans.stream_repay(stream.currency_id, borrower, amount + unlock amount)
+            //4, if remain_borrow_amount == 0, mark the stream as not collateral
+            Ok(().into())
+        }
+
+        #[pallet::weight((<T as Config>::WeightInfo::withdraw_from_stream(), DispatchClass::Operational))]
+        #[transactional]
+        pub fn swap_from_stream(
+            origin: OriginFor<T>,
+            stream_id: StreamId,
+            min_amount: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+            //1, check ownership of the stream and not mark as collateral
+            //2, claim the unlock portion and transfer for user
+            //3, calculate the remaining swap value of the stream. make sure swap value >= min_amount
+            //4, call loans.stream_borrow(stream.currency_id, Self::account_id(), borrow_amount)
+            //5, transfer stream ownership to stream pallet.
+            Ok(().into())
+        }
     }
 }
 

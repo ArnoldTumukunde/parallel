@@ -62,6 +62,7 @@ mod farming;
 mod interest;
 mod ptoken;
 mod rate_model;
+mod stream_loans;
 mod types;
 
 pub mod migrations;
@@ -208,9 +209,15 @@ pub mod pallet {
         /// Event emitted when cash is borrowed
         /// [sender, asset_id, amount]
         Borrowed(T::AccountId, AssetIdOf<T>, BalanceOf<T>),
+        /// Event emitted when cash is stream borrowed
+        /// [sender, asset_id, amount]
+        StreamBorrowed(T::AccountId, AssetIdOf<T>, BalanceOf<T>),
         /// Event emitted when a borrow is repaid
         /// [sender, asset_id, amount]
         RepaidBorrow(T::AccountId, AssetIdOf<T>, BalanceOf<T>),
+        /// Event emitted when a stream borrow is repaid
+        /// [sender, asset_id, amount]
+        RepaidStreamBorrow(T::AccountId, AssetIdOf<T>, BalanceOf<T>),
         /// Event emitted when a borrow is liquidated
         /// [liquidator, borrower, liquidation_asset_id, collateral_asset_id, repay_amount, collateral_amount]
         LiquidatedBorrow(
@@ -270,6 +277,11 @@ pub mod pallet {
     pub type TotalBorrows<T: Config> =
         StorageMap<_, Blake2_128Concat, AssetIdOf<T>, BalanceOf<T>, ValueQuery>;
 
+    #[pallet::storage]
+    #[pallet::getter(fn stream_total_borrows)]
+    pub type StreamTotalBorrows<T: Config> =
+        StorageMap<_, Blake2_128Concat, AssetIdOf<T>, BalanceOf<T>, ValueQuery>;
+
     /// Total amount of reserves of the underlying held in this market
     /// CurrencyId -> Balance
     #[pallet::storage]
@@ -282,6 +294,18 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn account_borrows)]
     pub type AccountBorrows<T: Config> = StorageDoubleMap<
+        _,
+        Blake2_128Concat,
+        AssetIdOf<T>,
+        Blake2_128Concat,
+        T::AccountId,
+        BorrowSnapshot<BalanceOf<T>>,
+        ValueQuery,
+    >;
+
+    #[pallet::storage]
+    #[pallet::getter(fn stream_account_borrows)]
+    pub type StreamAccountBorrows<T: Config> = StorageDoubleMap<
         _,
         Blake2_128Concat,
         AssetIdOf<T>,
@@ -1307,6 +1331,16 @@ impl<T: Config> Pallet<T> {
         asset_id: AssetIdOf<T>,
     ) -> Result<BalanceOf<T>, DispatchError> {
         let snapshot: BorrowSnapshot<BalanceOf<T>> = Self::account_borrows(asset_id, who);
+        Self::current_balance_from_snapshot(asset_id, snapshot)
+    }
+
+    // Calculates and returns the most recent amount of borrowed balance of `currency_id`
+    // for `who`.
+    pub fn current_stream_borrow_balance(
+        who: &T::AccountId,
+        asset_id: AssetIdOf<T>,
+    ) -> Result<BalanceOf<T>, DispatchError> {
+        let snapshot: BorrowSnapshot<BalanceOf<T>> = Self::stream_account_borrows(asset_id, who);
         Self::current_balance_from_snapshot(asset_id, snapshot)
     }
 

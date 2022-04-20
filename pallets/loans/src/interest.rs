@@ -114,11 +114,18 @@ impl<T: Config> Pallet<T> {
         delta_time: u64,
     ) -> DispatchResult {
         let borrows_prior = Self::total_borrows(asset_id);
+        let stream_borrows_prior = Self::stream_total_borrows(asset_id);
         let reserve_prior = Self::total_reserves(asset_id);
         let interest_accumulated = Self::accrued_interest(borrow_rate, borrows_prior, delta_time)
             .ok_or(ArithmeticError::Overflow)?;
+        let stream_interest_accumulated =
+            Self::accrued_interest(borrow_rate, stream_borrows_prior, delta_time)
+                .ok_or(ArithmeticError::Overflow)?;
         let total_borrows_new = interest_accumulated
             .checked_add(borrows_prior)
+            .ok_or(ArithmeticError::Overflow)?;
+        let stream_total_borrows_new = stream_interest_accumulated
+            .checked_add(stream_borrows_prior)
             .ok_or(ArithmeticError::Overflow)?;
         let total_reserves_new = market
             .reserve_factor
@@ -131,6 +138,7 @@ impl<T: Config> Pallet<T> {
             .ok_or(ArithmeticError::Overflow)?;
 
         TotalBorrows::<T>::insert(asset_id, total_borrows_new);
+        StreamTotalBorrows::<T>::insert(asset_id, stream_total_borrows_new);
         TotalReserves::<T>::insert(asset_id, total_reserves_new);
         BorrowIndex::<T>::insert(asset_id, borrow_index_new);
 
