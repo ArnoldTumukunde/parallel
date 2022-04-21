@@ -74,6 +74,7 @@ pub const MIN_INTEREST_CALCULATING_INTERVAL: u64 = 100; // 100 seconds
 pub const MAX_EXCHANGE_RATE: u128 = 1_000_000_000_000_000_000; // 1
 pub const MIN_EXCHANGE_RATE: u128 = 20_000_000_000_000_000; // 0.02
 pub const DEFAULT_LIQUIDATE_INCENTIVE_RESERVED_FACTOR: Ratio = Ratio::from_percent(3);
+pub const DEFAULT_LIQUIDATE_ALLOWANCE_THRESHOLD_FACTOR: Ratio = Ratio::from_percent(95);
 
 type AssetIdOf<T> =
     <<T as Config>::Assets as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
@@ -1676,7 +1677,9 @@ impl<T: Config> Pallet<T> {
     // `reduce_amount`: values that will have an impact on liquidity
     fn ensure_liquidity(account: &T::AccountId, reduce_amount: FixedU128) -> DispatchResult {
         let (liquidity, _) = Self::get_account_liquidity(account)?;
-        if liquidity < reduce_amount {
+        if liquidity.saturating_mul(DEFAULT_LIQUIDATE_ALLOWANCE_THRESHOLD_FACTOR.into())
+            < reduce_amount
+        {
             Err(Error::<T>::InsufficientLiquidity.into())
         } else {
             Ok(())
