@@ -98,7 +98,7 @@ export const createPaidXcm = (encoded: string, sovereignAccount: string) => {
       {
         Transact: {
           originType: 'Native',
-          requireWeightAtMost: '2000000000',
+          requireWeightAtMost: '3000000000',
           call: {
             encoded
           }
@@ -144,7 +144,7 @@ export const createUnpaidXcm = (encoded: string) => {
       {
         Transact: {
           originType: 'Superuser',
-          requireWeightAtMost: '2000000000',
+          requireWeightAtMost: '3000000000',
           call: {
             encoded
           }
