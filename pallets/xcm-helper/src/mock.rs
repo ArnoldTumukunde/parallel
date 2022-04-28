@@ -180,6 +180,7 @@ impl cumulus_pallet_xcmp_queue::Config for Test {
     type VersionWrapper = ();
     type ControllerOrigin = EnsureRoot<AccountId>;
     type ControllerOriginConverter = SystemParachainAsSuperuser<Origin>;
+    type WeightInfo = cumulus_pallet_xcmp_queue::weights::SubstrateWeight<Test>;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Test {
@@ -371,6 +372,7 @@ impl crate::Config for Test {
     type BlockNumberProvider = frame_system::Pallet<Test>;
     type XcmOrigin = EnsureRoot<AccountId>;
     type WeightInfo = ();
+    type RelayCurrency = RelayCurrency;
 }
 
 parameter_types! {

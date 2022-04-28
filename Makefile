@@ -1,6 +1,7 @@
 PARA_ID        											:= 2012
 CHAIN          											:= kerria-dev
 RELAY_CHAIN                         := polkadot-local
+CUMULUS_CHAIN     									:= statemint-dev
 RUNTIME        											:= kerria-runtime
 BLOCK_AT       											:= 0x0000000000000000000000000000000000000000000000000000000000000000
 URL            											:= ws://localhost:9948
@@ -11,13 +12,14 @@ LAUNCH_CONFIG_YAML	  							:= config.yml
 LAUNCH_CONFIG_JSON	  							:= config.json
 DOCKER_OVERRIDE_YAML                := docker-compose.override.yml
 DOCKER_TAG     											:= latest
-RELAY_DOCKER_TAG										:= v0.9.17
+RELAY_DOCKER_TAG										:= v0.9.19
+CUMULUS_DOCKER_TAG									:= v0.9.19
 
 .PHONY: init
 init: submodules
 	git config advice.ignoredHook false
 	git config core.hooksPath .githooks
-	rustup target add wasm32-unknown-unknown
+	rustup target add wasm32-unknown-unknown --toolchain nightly-2022-04-24
 	cd scripts/helper && yarn
 	cd scripts/polkadot-launch && yarn
 
@@ -61,50 +63,54 @@ test:
 integration-test:
 	SKIP_WASM_BUILD= cargo test -p runtime-integration-tests -- --nocapture
 
+.PHONY: integration-test-statemine
+integration-test-statemine:
+	SKIP_WASM_BUILD= cargo test -p runtime-integration-tests -- statemine::statemine --nocapture
+
 .PHONY: bench
 bench: bench-loans bench-liquid-staking bench-amm bench-amm-router bench-crowdloans bench-bridge bench-xcm-helper bench-farming
 	./scripts/benchmark.sh
 
 .PHONY: bench-farming
 bench-farming:
-	cargo run --release --features runtime-benchmarks -- benchmark --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-farming --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/farming/src/weights.rs
+	cargo run --release --features runtime-benchmarks -- benchmark pallet --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-farming --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/farming/src/weights.rs
 
 .PHONY: bench-loans
 bench-loans:
-	cargo run --release --features runtime-benchmarks -- benchmark --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-loans --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/loans/src/weights.rs
+	cargo run --release --features runtime-benchmarks -- benchmark pallet --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-loans --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/loans/src/weights.rs
 
 .PHONY: bench-crowdloans
 bench-crowdloans:
-	cargo run --release --features runtime-benchmarks -- benchmark --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-crowdloans --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/crowdloans/src/weights.rs
+	cargo run --release --features runtime-benchmarks -- benchmark pallet --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-crowdloans --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/crowdloans/src/weights.rs
 
 .PHONY: bench-bridge
 bench-bridge:
-	cargo run --release --features runtime-benchmarks -- benchmark --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-bridge --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/bridge/src/weights.rs
+	cargo run --release --features runtime-benchmarks -- benchmark pallet --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-bridge --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/bridge/src/weights.rs
 
 .PHONY: bench-xcm-helper
 bench-xcm-helper:
-	cargo run --release --features runtime-benchmarks -- benchmark --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-xcm-helper --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/xcm-helper/src/weights.rs
+	cargo run --release --features runtime-benchmarks -- benchmark pallet --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-xcm-helper --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/xcm-helper/src/weights.rs
 
 .PHONY: bench-amm
 bench-amm:
-	cargo run --release --features runtime-benchmarks -- benchmark --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-amm --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/amm/src/weights.rs
+	cargo run --release --features runtime-benchmarks -- benchmark pallet --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-amm --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/amm/src/weights.rs
 
 .PHONY: bench-liquid-staking
 bench-liquid-staking:
-	cargo run --release --features runtime-benchmarks -- benchmark --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-liquid-staking --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/liquid-staking/src/weights.rs
+	cargo run --release --features runtime-benchmarks -- benchmark pallet --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-liquid-staking --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/liquid-staking/src/weights.rs
 
 .PHONY: bench-amm-router
 bench-amm-router:
-	cargo run --release --features runtime-benchmarks -- benchmark --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-router --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/router/src/weights.rs
+	cargo run --release --features runtime-benchmarks -- benchmark pallet --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-router --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/router/src/weights.rs
 
 
 .PHONY: bench-streaming
 bench-streaming:
-	cargo run --release --features runtime-benchmarks -- benchmark --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-streaming --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/stream/src/weights.rs
+	cargo run --release --features runtime-benchmarks -- benchmark pallet --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-streaming --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/stream/src/weights.rs
 
 .PHONY: bench-asset-registry
 bench-asset-registry:
-	cargo run --release --features runtime-benchmarks -- benchmark --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-asset-registry --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/asset-registry/src/weights.rs
+	cargo run --release --features runtime-benchmarks -- benchmark pallet --chain=$(CHAIN) --execution=wasm --wasm-execution=compiled --pallet=pallet-asset-registry --extrinsic='*' --steps=50 --repeat=20 --heap-pages=4096 --template=./.maintain/frame-weight-template.hbs --output=./pallets/asset-registry/src/weights.rs
 
 .PHONY: lint
 lint:
@@ -135,7 +141,7 @@ shutdown:
 		-f output/docker-compose.override.yml \
 		down \
 		--remove-orphans > /dev/null 2>&1 || true
-	rm -fr output || true
+	sudo rm -fr output || true
 	rm -fr data || true
 	docker volume prune -f
 
@@ -143,11 +149,13 @@ shutdown:
 launch: shutdown
 	yq -i eval '.relaychain.image = "parallelfinance/polkadot:$(RELAY_DOCKER_TAG)"' $(LAUNCH_CONFIG_YAML)
 	yq -i eval '.relaychain.chain = "$(RELAY_CHAIN)"' $(LAUNCH_CONFIG_YAML)
-	yq -i eval '.relaychain.runtimeGenesisConfig.hrmp.preopenHrmpChannels[0].recipient = $(PARA_ID)' $(LAUNCH_CONFIG_YAML)
-	yq -i eval '.relaychain.runtimeGenesisConfig.hrmp.preopenHrmpChannels[1].sender = $(PARA_ID)' $(LAUNCH_CONFIG_YAML)
+	yq -i eval '.relaychain.runtimeGenesisConfig.hrmp.preopenHrmpChannels[0].sender = $(PARA_ID)' $(LAUNCH_CONFIG_YAML)
+	yq -i eval '.relaychain.runtimeGenesisConfig.hrmp.preopenHrmpChannels[1].recipient = $(PARA_ID)' $(LAUNCH_CONFIG_YAML)
 	yq -i eval '.parachains[0].image = "parallelfinance/parallel:$(DOCKER_TAG)"' $(LAUNCH_CONFIG_YAML)
 	yq -i eval '.parachains[0].id = $(PARA_ID)' $(LAUNCH_CONFIG_YAML)
 	yq -i eval '.parachains[0].chain.base = "$(CHAIN)"' $(LAUNCH_CONFIG_YAML)
+	yq -i eval '.parachains[1].image = "parallelfinance/polkadot-collator:$(CUMULUS_DOCKER_TAG)"' $(LAUNCH_CONFIG_YAML)
+	yq -i eval '.parachains[1].chain.base = "$(CUMULUS_CHAIN)"' $(LAUNCH_CONFIG_YAML)
 	docker image pull parallelfinance/polkadot:$(RELAY_DOCKER_TAG)
 	docker image pull parallelfinance/parallel:$(DOCKER_TAG)
 	docker image pull parallelfinance/stake-client:latest
@@ -158,13 +166,14 @@ launch: shutdown
 	parachain-launch generate $(LAUNCH_CONFIG_YAML) \
 		&& (cp -r keystore* output || true) \
 		&& cp docker-compose.override.yml output \
+		&& cp -r resources/apps-config output \
 		&& cd output \
 		&& DOCKER_CLIENT_TIMEOUT=1080 COMPOSE_HTTP_TIMEOUT=1080 PARA_ID=$(PARA_ID) docker-compose up -d --build
 	cd scripts/helper && yarn start launch --network $(CHAIN)
 
 .PHONY: launch-vanilla
 launch-vanilla:
-	make PARA_ID=2085 CHAIN=vanilla-dev RELAY_CHAIN=kusama-local launch
+	make PARA_ID=2085 CHAIN=vanilla-dev RELAY_CHAIN=kusama-local CUMULUS_CHAIN=statemine-dev launch
 
 .PHONY: dev-launch
 dev-launch: shutdown

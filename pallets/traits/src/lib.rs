@@ -72,6 +72,43 @@ pub trait AMM<AccountId, CurrencyId, Balance> {
     fn get_pools() -> Result<Vec<(CurrencyId, CurrencyId)>, DispatchError>;
 }
 
+/// Exported traits from StableSwap pallet. These functions are to be used
+/// by the router.
+pub trait StableSwap<AccountId, CurrencyId, Balance> {
+    /// Based on the path specified and the available pool balances
+    /// this will return the amounts outs when trading the specified
+    /// amount in
+    fn get_amounts_out(
+        amount_in: Balance,
+        path: Vec<CurrencyId>,
+    ) -> Result<Vec<Balance>, DispatchError>;
+
+    /// Based on the path specified and the available pool balances
+    /// this will return the amounts in needed to produce the specified
+    /// amount out
+    fn get_amounts_in(
+        amount_out: Balance,
+        path: Vec<CurrencyId>,
+    ) -> Result<Vec<Balance>, DispatchError>;
+
+    /// Handles a "swap" on the AMM side for "who".
+    /// This will move the `amount_in` funds to the AMM PalletId,
+    /// trade `pair.0` to `pair.1` and return a result with the amount
+    /// of currency that was sent back to the user.
+    fn swap(
+        who: &AccountId,
+        pair: (CurrencyId, CurrencyId),
+        amount_in: Balance,
+    ) -> Result<(), DispatchError>;
+
+    fn get_pools() -> Result<Vec<(CurrencyId, CurrencyId)>, DispatchError>;
+
+    fn get_reserves(
+        asset_in: CurrencyId,
+        asset_out: CurrencyId,
+    ) -> Result<(Balance, Balance), DispatchError>;
+}
+
 pub trait ConvertToBigUint {
     fn get_big_uint(&self) -> BigUint;
 }
@@ -90,21 +127,18 @@ pub trait ValidationDataProvider {
 /// Distribute liquidstaking asset to multi-accounts
 pub trait DistributionStrategy<Balance> {
     fn get_bond_distributions(
-        bonded_amounts: Vec<(DerivativeIndex, Balance)>,
+        total_bonded_amounts: Vec<(DerivativeIndex, Balance)>,
         input: Balance,
         cap: Balance,
         min_nominator_bond: Balance,
     ) -> Vec<(DerivativeIndex, Balance)>;
     fn get_unbond_distributions(
-        bonded_amounts: Vec<(DerivativeIndex, Balance)>,
+        active_bonded_amounts: Vec<(DerivativeIndex, Balance)>,
         input: Balance,
-        cap: Balance,
         min_nominator_bond: Balance,
     ) -> Vec<(DerivativeIndex, Balance)>;
     fn get_rebond_distributions(
-        unbonding_bonded_amounts: Vec<(DerivativeIndex, Balance, Balance)>,
+        unbonding_amounts: Vec<(DerivativeIndex, Balance)>,
         input: Balance,
-        cap: Balance,
-        min_nominator_bond: Balance,
     ) -> Vec<(DerivativeIndex, Balance)>;
 }

@@ -184,9 +184,9 @@ pub mod pallet {
             + BlockNumberProvider<BlockNumber = BlockNumberFor<Self>>;
 
         /// To expose XCM helper functions
-        type XCM: XcmHelper<Self, BalanceOf<Self>, AssetIdOf<Self>, Self::AccountId>;
+        type XCM: XcmHelper<Self, BalanceOf<Self>, Self::AccountId>;
 
-        /// Currenty strategy for distributing assets to multi-accounts
+        /// Current strategy for distributing assets to multi-accounts
         type DistributionStrategy: DistributionStrategy<BalanceOf<Self>>;
     }
 
@@ -197,7 +197,7 @@ pub mod pallet {
         Staked(T::AccountId, BalanceOf<T>),
         /// The derivative get unstaked successfully
         Unstaked(T::AccountId, BalanceOf<T>, BalanceOf<T>),
-        /// Staking ledger feeded
+        /// Staking ledger updated
         StakingLedgerUpdated(DerivativeIndex, StakingLedger<T::AccountId, BalanceOf<T>>),
         /// Sent staking.bond call to relaychain
         Bonding(
@@ -407,7 +407,7 @@ pub mod pallet {
                 amount,
                 false,
             )?;
-            T::XCM::add_xcm_fees(Self::staking_currency()?, &who, xcm_fees)?;
+            T::XCM::add_xcm_fees(&who, xcm_fees)?;
 
             let amount = amount
                 .checked_sub(reserves)
@@ -437,7 +437,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// Unstake by exchange derivative for assets, the assets will not be avaliable immediately.
+        /// Unstake by exchange derivative for assets, the assets will not be available immediately.
         /// Instead, the request is recorded and pending for the nomination accounts on relaychain
         /// chain to do the `unbond` operation.
         ///
@@ -862,10 +862,11 @@ pub mod pallet {
                 return weight;
             }
             weight += <T as Config>::WeightInfo::force_advance_era();
-            with_transaction(|| match Self::do_advance_era(offset) {
-                Ok(()) => TransactionOutcome::Commit(weight),
-                Err(_) => TransactionOutcome::Rollback(weight),
-            })
+            let _ = with_transaction(|| match Self::do_advance_era(offset) {
+                Ok(()) => TransactionOutcome::Commit(Ok(())),
+                Err(err) => TransactionOutcome::Rollback(Err(err)),
+            });
+            weight
         }
 
         fn on_finalize(_n: T::BlockNumber) {
@@ -922,7 +923,11 @@ pub mod pallet {
                 .unwrap_or_else(Zero::zero)
         }
 
-        fn bonded_of(index: DerivativeIndex) -> BalanceOf<T> {
+        fn total_bonded_of(index: DerivativeIndex) -> BalanceOf<T> {
+            Self::staking_ledger(&index).map_or(Zero::zero(), |ledger| ledger.total)
+        }
+
+        fn active_bonded_of(index: DerivativeIndex) -> BalanceOf<T> {
             Self::staking_ledger(&index).map_or(Zero::zero(), |ledger| ledger.active)
         }
 
@@ -952,9 +957,8 @@ pub mod pallet {
         }
 
         fn get_total_bonded() -> BalanceOf<T> {
-            StakingLedgers::<T>::iter_values().fold(Zero::zero(), |acc, ledger| {
-                acc.saturating_add(ledger.active)
-            })
+            StakingLedgers::<T>::iter_values()
+                .fold(Zero::zero(), |acc, ledger| acc.saturating_add(ledger.total))
         }
 
         fn get_market_cap() -> BalanceOf<T> {
@@ -997,13 +1001,11 @@ pub mod pallet {
                 p.set_stake_amount_lock(amount)
             })?;
 
-            let staking_currency = Self::staking_currency()?;
             let derivative_account_id = Self::derivative_sovereign_account_id(derivative_index);
             let query_id = T::XCM::do_bond(
                 amount,
                 payee.clone(),
                 derivative_account_id.clone(),
-                staking_currency,
                 derivative_index,
                 Self::notify_placeholder(),
             )?;
@@ -1059,7 +1061,6 @@ pub mod pallet {
             let query_id = T::XCM::do_bond_extra(
                 amount,
                 Self::derivative_sovereign_account_id(derivative_index),
-                Self::staking_currency()?,
                 derivative_index,
                 Self::notify_placeholder(),
             )?;
@@ -1110,12 +1111,7 @@ pub mod pallet {
                 &amount,
             );
 
-            let query_id = T::XCM::do_unbond(
-                amount,
-                Self::staking_currency()?,
-                derivative_index,
-                Self::notify_placeholder(),
-            )?;
+            let query_id = T::XCM::do_unbond(amount, derivative_index, Self::notify_placeholder())?;
 
             XcmRequests::<T>::insert(
                 query_id,
@@ -1157,12 +1153,7 @@ pub mod pallet {
                 p.set_stake_amount_lock(amount)
             })?;
 
-            let query_id = T::XCM::do_rebond(
-                amount,
-                Self::staking_currency()?,
-                derivative_index,
-                Self::notify_placeholder(),
-            )?;
+            let query_id = T::XCM::do_rebond(amount, derivative_index, Self::notify_placeholder())?;
 
             XcmRequests::<T>::insert(
                 query_id,
@@ -1205,7 +1196,6 @@ pub mod pallet {
             let query_id = T::XCM::do_withdraw_unbonded(
                 num_slashing_spans,
                 Self::sovereign_account_id(),
-                Self::staking_currency()?,
                 derivative_index,
                 Self::notify_placeholder(),
             )?;
@@ -1248,7 +1238,6 @@ pub mod pallet {
 
             let query_id = T::XCM::do_nominate(
                 targets.clone(),
-                Self::staking_currency()?,
                 derivative_index,
                 Self::notify_placeholder(),
             )?;
@@ -1277,7 +1266,7 @@ pub mod pallet {
 
             let amounts: Vec<(DerivativeIndex, BalanceOf<T>)> = T::DerivativeIndexList::get()
                 .iter()
-                .map(|&index| (index, Self::bonded_of(index)))
+                .map(|&index| (index, Self::total_bonded_of(index)))
                 .collect();
             let distributions = T::DistributionStrategy::get_bond_distributions(
                 amounts,
@@ -1301,12 +1290,11 @@ pub mod pallet {
 
             let amounts: Vec<(DerivativeIndex, BalanceOf<T>)> = T::DerivativeIndexList::get()
                 .iter()
-                .map(|&index| (index, Self::bonded_of(index)))
+                .map(|&index| (index, Self::active_bonded_of(index)))
                 .collect();
             let distributions = T::DistributionStrategy::get_unbond_distributions(
                 amounts,
                 total_amount,
-                Self::staking_ledger_cap(),
                 T::MinNominatorBond::get(),
             );
 
@@ -1323,17 +1311,12 @@ pub mod pallet {
                 return Ok(());
             }
 
-            let amounts: Vec<(DerivativeIndex, BalanceOf<T>, BalanceOf<T>)> =
-                T::DerivativeIndexList::get()
-                    .iter()
-                    .map(|&index| (index, Self::unbonding_of(index), Self::bonded_of(index)))
-                    .collect();
-            let distributions = T::DistributionStrategy::get_rebond_distributions(
-                amounts,
-                total_amount,
-                Self::staking_ledger_cap(),
-                T::MinNominatorBond::get(),
-            );
+            let amounts: Vec<(DerivativeIndex, BalanceOf<T>)> = T::DerivativeIndexList::get()
+                .iter()
+                .map(|&index| (index, Self::unbonding_of(index)))
+                .collect();
+            let distributions =
+                T::DistributionStrategy::get_rebond_distributions(amounts, total_amount);
 
             for (index, amount) in distributions.into_iter() {
                 Self::do_rebond(index, amount)?;
@@ -1571,7 +1554,7 @@ pub mod pallet {
             amount: BalanceOf<T>,
         ) -> DispatchResult {
             ensure!(
-                Self::bonded_of(derivative_index).saturating_add(amount)
+                Self::total_bonded_of(derivative_index).saturating_add(amount)
                     <= Self::staking_ledger_cap(),
                 Error::<T>::CapExceeded
             );

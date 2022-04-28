@@ -19,8 +19,8 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
     construct_runtime,
-    dispatch::Weight,
-    log, match_type, parameter_types,
+    dispatch::{DispatchResult, Weight},
+    log, match_types, parameter_types,
     traits::{
         fungibles::{InspectMetadata, Mutate},
         tokens::BalanceConversion,
@@ -29,7 +29,7 @@ use frame_support::{
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
-        DispatchClass,
+        ConstantMultiplier, DispatchClass,
     },
     PalletId,
 };
@@ -37,17 +37,17 @@ use frame_system::{
     limits::{BlockLength, BlockWeights},
     EnsureRoot, EnsureSigned,
 };
-use orml_traits::{parameter_type_with_key, DataProvider, DataProviderExtended};
+use orml_traits::{
+    location::AbsoluteReserveProvider, parameter_type_with_key, DataFeeder, DataProvider,
+    DataProviderExtended,
+};
 use orml_xcm_support::{IsNativeConcrete, MultiNativeAsset};
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::SlowAdjustingFeeUpdate;
 use scale_info::TypeInfo;
 use sp_api::impl_runtime_apis;
-use sp_core::{
-    u32_trait::{_1, _2, _3, _4, _5},
-    OpaqueMetadata,
-};
+use sp_core::OpaqueMetadata;
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{
@@ -96,6 +96,7 @@ pub use pallet_liquid_staking;
 pub use pallet_loans;
 pub use pallet_prices;
 pub use pallet_router;
+pub use pallet_stableswap;
 pub use pallet_streaming;
 
 use pallet_traits::{
@@ -109,7 +110,8 @@ use primitives::{
     network::HEIKO_PREFIX,
     tokens::{EUSDC, EUSDT, GENS, HKO, KAR, KBTC, KINT, KSM, KUSD, LKSM, MOVR, PHA, SKSM},
     AccountId, AuraId, Balance, BlockNumber, ChainId, CurrencyId, DataProviderId, EraIndex, Hash,
-    Index, Liquidity, Moment, ParaId, PersistedValidationData, Price, Ratio, Shortfall, Signature,
+    Index, Liquidity, Moment, ParaId, PersistedValidationData, Price, Rate, Ratio, Shortfall,
+    Signature,
 };
 
 // Make the WASM binary available.
@@ -142,10 +144,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("vanilla"),
     impl_name: create_runtime_str!("vanilla"),
     authoring_version: 1,
-    spec_version: 183,
-    impl_version: 28,
+    spec_version: 184,
+    impl_version: 29,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 12,
+    transaction_version: 13,
     state_version: 0,
 };
 
@@ -169,7 +171,7 @@ pub fn native_version() -> NativeVersion {
     }
 }
 
-/// We assume that ~10% of the block weight is consumed by `on_initalize` handlers.
+/// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
 /// This is used to limit the maximal weight of a single extrinsic.
 const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 /// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used
@@ -539,6 +541,8 @@ impl orml_xtokens::Config for Runtime {
     type LocationInverter = LocationInverter<Ancestry>;
     type MaxAssetsForTransfer = MaxAssetsForTransfer;
     type MinXcmFee = ParachainMinFee;
+    type MultiLocationsFilter = Everything;
+    type ReserveProvider = AbsoluteReserveProvider;
 }
 
 parameter_types! {
@@ -612,7 +616,7 @@ impl pallet_liquid_staking::Config for Runtime {
     type StakingCurrency = StakingCurrency;
     type LiquidCurrency = LiquidCurrency;
     type DerivativeIndexList = DerivativeIndexList;
-    type DistributionStrategy = pallet_liquid_staking::distribution::MaximizationDistribution;
+    type DistributionStrategy = pallet_liquid_staking::distribution::MaxMinDistribution;
     type XcmFees = XcmFees;
     type EraLength = EraLength;
     type MinStake = MinStake;
@@ -823,10 +827,10 @@ parameter_types! {
 impl pallet_transaction_payment::Config for Runtime {
     type OnChargeTransaction =
         pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees<Runtime>>;
-    type TransactionByteFee = TransactionByteFee;
     type WeightToFee = WeightToFee;
     type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
     type OperationalFeeMultiplier = OperationalFeeMultiplier;
+    type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -994,6 +998,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type VersionWrapper = PolkadotXcm;
     type ControllerOrigin = EnsureRootOrMoreThanHalfGeneralCouncil;
     type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
+    type WeightInfo = cumulus_pallet_xcmp_queue::weights::SubstrateWeight<Runtime>;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
@@ -1199,7 +1204,7 @@ parameter_types! {
     );
 }
 
-match_type! {
+match_types! {
     pub type ParentOrSiblings: impl Contains<MultiLocation> = {
         MultiLocation { parents: 1, interior: Here } |
         MultiLocation { parents: 1, interior: X1(_) }
@@ -1252,8 +1257,8 @@ pub type Trader = (
     FirstAssetTrader<AssetType, AssetRegistry, XcmFeesToAccount>,
 );
 
-// Min fee required when transfering asset back to reserve sibling chain
-// which use aother asset(e.g Relaychain's asset) as fee
+// Min fee required when transferring asset back to reserve sibling chain
+// which use another asset(e.g Relaychain's asset) as fee
 parameter_type_with_key! {
     pub ParachainMinFee: |location: MultiLocation| -> u128 {
         #[allow(clippy::match_ref_pats)] // false positive
@@ -1320,7 +1325,7 @@ impl Config for XcmConfig {
     // How to withdraw and deposit an asset.
     type AssetTransactor = AssetTransactors;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
-    type IsReserve = MultiNativeAsset;
+    type IsReserve = MultiNativeAsset<AbsoluteReserveProvider>;
     // Teleporting is disabled.
     type IsTeleporter = ();
     type LocationInverter = LocationInverter<Ancestry>;
@@ -1364,6 +1369,29 @@ impl orml_oracle::Config<ParallelDataProvider> for Runtime {
     type Members = OracleMembership;
 }
 
+parameter_types! {
+    pub const StableSwapPalletId: PalletId = PalletId(*b"par/sswp");
+    pub const NumTokens: u8 = 2;
+    pub const Precision: u32 = 100;
+    pub const AmplificationCoefficient: u8 = 85;
+}
+
+impl pallet_stableswap::Config for Runtime {
+    type Event = Event;
+    type Assets = CurrencyAdapter;
+    type WeightInfo = pallet_stableswap::weights::SubstrateWeight<Runtime>;
+    type PalletId = StableSwapPalletId;
+    type ProtocolFeeReceiver = DefaultProtocolFeeReceiver;
+    type LpFee = DefaultLpFee;
+    type LockAccountId = OneAccount;
+    type ProtocolFee = DefaultProtocolFee;
+    type MinimumLiquidity = MinimumLiquidity;
+    type NumTokens = NumTokens;
+    type Precision = Precision;
+    type AmplificationCoefficient = AmplificationCoefficient;
+    type CreatePoolOrigin = EnsureRootOrMoreThanHalfGeneralCouncil;
+}
+
 pub type TimeStampedPrice = orml_oracle::TimestampedValue<Price, Moment>;
 pub struct AggregatedDataProvider;
 impl DataProvider<CurrencyId, TimeStampedPrice> for AggregatedDataProvider {
@@ -1379,6 +1407,12 @@ impl DataProviderExtended<CurrencyId, TimeStampedPrice> for AggregatedDataProvid
 
     fn get_all_values() -> Vec<(CurrencyId, Option<TimeStampedPrice>)> {
         Oracle::get_all_values()
+    }
+}
+
+impl DataFeeder<CurrencyId, TimeStampedPrice, AccountId> for AggregatedDataProvider {
+    fn feed_value(_: AccountId, _: CurrencyId, _: TimeStampedPrice) -> DispatchResult {
+        Err("Not supported".into())
     }
 }
 
@@ -1402,7 +1436,7 @@ impl DecimalProvider<CurrencyId> for Decimal {
 impl pallet_prices::Config for Runtime {
     type Event = Event;
     type Source = AggregatedDataProvider;
-    type FeederOrigin = EnsureRoot<AccountId>;
+    type FeederOrigin = EnsureRootOrMoreThanHalfGeneralCouncil;
     type LiquidStakingExchangeRateProvider = LiquidStaking;
     type LiquidStakingCurrenciesProvider = LiquidStaking;
     type Decimal = Decimal;
@@ -1453,16 +1487,11 @@ impl pallet_identity::Config for Runtime {
 
 type EnsureRootOrMoreThanHalfGeneralCouncil = EnsureOneOf<
     EnsureRoot<AccountId>,
-    pallet_collective::EnsureProportionMoreThan<_1, _2, AccountId, GeneralCouncilCollective>,
+    pallet_collective::EnsureProportionMoreThan<AccountId, GeneralCouncilCollective, 1, 2>,
 >;
-type EnsureRootOrAtLeastThreeFifthsGeneralCouncil = EnsureOneOf<
+type EnsureRootOrAllTechnicalCommittee = EnsureOneOf<
     EnsureRoot<AccountId>,
-    pallet_collective::EnsureProportionAtLeast<_3, _5, AccountId, GeneralCouncilCollective>,
->;
-
-type EnsureRootOrAllTechnicalComittee = EnsureOneOf<
-    EnsureRoot<AccountId>,
-    pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, TechnicalCollective>,
+    pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 1, 1>,
 >;
 
 parameter_types! {
@@ -1488,28 +1517,28 @@ impl pallet_democracy::Config for Runtime {
     type MinimumDeposit = MinimumDeposit;
     /// A straight majority of the council can decide what their next motion is.
     type ExternalOrigin =
-        pallet_collective::EnsureProportionAtLeast<_1, _2, AccountId, GeneralCouncilCollective>;
+        pallet_collective::EnsureProportionAtLeast<AccountId, GeneralCouncilCollective, 1, 2>;
     /// A super-majority can have the next scheduled referendum be a straight majority-carries vote.
     type ExternalMajorityOrigin =
-        pallet_collective::EnsureProportionAtLeast<_3, _4, AccountId, GeneralCouncilCollective>;
+        pallet_collective::EnsureProportionMoreThan<AccountId, GeneralCouncilCollective, 1, 2>;
     /// A unanimous council can have the next scheduled referendum be a straight default-carries
     /// (NTB) vote.
     type ExternalDefaultOrigin =
-        pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, GeneralCouncilCollective>;
+        pallet_collective::EnsureProportionAtLeast<AccountId, GeneralCouncilCollective, 1, 1>;
     /// Two thirds of the technical committee can have an ExternalMajority/ExternalDefault vote
     /// be tabled immediately and with a shorter voting/enactment period.
     type FastTrackOrigin =
-        pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, TechnicalCollective>;
+        pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 2, 3>;
     type InstantOrigin =
-        pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, TechnicalCollective>;
+        pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 1, 1>;
     type InstantAllowed = InstantAllowed;
     type FastTrackVotingPeriod = FastTrackVotingPeriod;
     // To cancel a proposal which has been passed, 2/3 of the council must agree to it.
     type CancellationOrigin =
-        pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, GeneralCouncilCollective>;
+        pallet_collective::EnsureProportionAtLeast<AccountId, GeneralCouncilCollective, 2, 3>;
     // To cancel a proposal before it has been passed, the technical committee must be unanimous or
     // Root must agree.
-    type CancelProposalOrigin = EnsureRootOrAllTechnicalComittee;
+    type CancelProposalOrigin = EnsureRootOrAllTechnicalCommittee;
     type BlacklistOrigin = EnsureRoot<AccountId>;
     // Any single technical committee member may veto a coming council proposal, however they can
     // only do it once and it lasts only for the cool-off period.
@@ -1641,7 +1670,7 @@ parameter_types! {
 impl pallet_treasury::Config for Runtime {
     type PalletId = TreasuryPalletId;
     type Currency = Balances;
-    type ApproveOrigin = EnsureRootOrAtLeastThreeFifthsGeneralCouncil;
+    type ApproveOrigin = EnsureRootOrMoreThanHalfGeneralCouncil;
     type RejectOrigin = EnsureRootOrMoreThanHalfGeneralCouncil;
     type Event = Event;
     type OnSlash = ();
@@ -1862,6 +1891,7 @@ impl pallet_xcm_helper::Config for Runtime {
     type BlockNumberProvider = frame_system::Pallet<Runtime>;
     type XcmOrigin = EnsureRootOrMoreThanHalfGeneralCouncil;
     type WeightInfo = pallet_xcm_helper::weights::SubstrateWeight<Runtime>;
+    type RelayCurrency = RelayCurrency;
 }
 
 parameter_types! {
@@ -1985,7 +2015,7 @@ construct_runtime!(
         XcmHelper: pallet_xcm_helper::{Pallet, Call, Storage, Event<T>} = 93,
         Streaming: pallet_streaming::{Pallet, Call, Storage, Event<T>} = 94,
         AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>} = 95,
-
+        StableSwap: pallet_stableswap::{Pallet, Call, Storage, Event<T>} = 96,
         // Parachain System, always put it at the end
         ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned} = 20,
     }
@@ -2154,9 +2184,17 @@ impl_runtime_apis! {
         }
     }
 
-    impl pallet_loans_rpc_runtime_api::LoansApi<Block, AccountId> for Runtime {
+    impl pallet_loans_rpc_runtime_api::LoansApi<Block, AccountId, Balance> for Runtime {
         fn get_account_liquidity(account: AccountId) -> Result<(Liquidity, Shortfall), DispatchError> {
             Loans::get_account_liquidity(&account)
+        }
+
+        fn get_market_status(asset_id: CurrencyId) -> Result<(Rate, Rate, Rate, Ratio, Balance, Balance, sp_runtime::FixedU128), DispatchError> {
+            Loans::get_market_status(asset_id)
+        }
+
+        fn get_liquidation_threshold_liquidity(account: AccountId) -> Result<(Liquidity, Shortfall), DispatchError> {
+            Loans::get_account_liquidation_threshold_liquidity(&account)
         }
     }
 

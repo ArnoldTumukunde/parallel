@@ -27,6 +27,7 @@ fn market_mock<T: Config>() -> Market<BalanceOf<T>> {
     Market {
         close_factor: Ratio::from_percent(50),
         collateral_factor: Ratio::from_percent(50),
+        liquidation_threshold: Ratio::from_percent(55),
         liquidate_incentive: Rate::from_inner(Rate::DIV / 100 * 110),
         state: MarketState::Active,
         rate_model: InterestRateModel::Jump(JumpModel {
@@ -36,6 +37,7 @@ fn market_mock<T: Config>() -> Market<BalanceOf<T>> {
             jump_utilization: Ratio::from_percent(80),
         }),
         reserve_factor: Ratio::from_percent(15),
+        liquidate_incentive_reserved_factor: Ratio::from_percent(3),
         supply_cap: 1_000_000_000_000_000_000_000u128, // set to 1B
         borrow_cap: 1_000_000_000_000_000_000_000u128, // set to 1B
         ptoken_id: 1200,
@@ -181,8 +183,10 @@ benchmarks! {
             SystemOrigin::Root,
             KSM,
             Ratio::from_percent(50),
+            Ratio::from_percent(55),
             Ratio::from_percent(50),
             Ratio::from_percent(15),
+            Ratio::from_percent(3),
             Rate::from_inner(Rate::DIV / 100 * 110),
             1_000_000_000_000_000_000_000u128,
             1_000_000_000_000_000_000_000u128
@@ -222,9 +226,9 @@ benchmarks! {
     update_market_reward_speed {
         assert_ok!(Loans::<T>::add_market(SystemOrigin::Root.into(), USDT, pending_market_mock::<T>(USDT)));
         assert_ok!(Loans::<T>::activate_market(SystemOrigin::Root.into(), USDT));
-    }: _(SystemOrigin::Root, USDT, 1_000_000)
+    }: _(SystemOrigin::Root, USDT, 1_000_000, 1_000_000)
     verify {
-        assert_last_event::<T>(Event::<T>::MarketRewardSpeedUpdated(USDT, 1_000_000).into());
+        assert_last_event::<T>(Event::<T>::MarketRewardSpeedUpdated(USDT, 1_000_000, 1_000_000).into());
     }
 
     claim_reward {
@@ -234,7 +238,7 @@ benchmarks! {
         assert_ok!(Loans::<T>::activate_market(SystemOrigin::Root.into(), USDT));
         assert_ok!(Loans::<T>::mint(SystemOrigin::Signed(caller.clone()).into(), USDT, 100_000_000));
         assert_ok!(Loans::<T>::add_reward(SystemOrigin::Signed(caller.clone()).into(), 1_000_000_000_000_u128));
-        assert_ok!(Loans::<T>::update_market_reward_speed(SystemOrigin::Root.into(), USDT, 1_000_000));
+        assert_ok!(Loans::<T>::update_market_reward_speed(SystemOrigin::Root.into(), USDT, 1_000_000, 1_000_000));
         let target_height = frame_system::Pallet::<T>::block_number().saturating_add(One::one());
         frame_system::Pallet::<T>::set_block_number(target_height);
     }: _(SystemOrigin::Signed(caller.clone()))
@@ -249,7 +253,7 @@ benchmarks! {
         assert_ok!(Loans::<T>::activate_market(SystemOrigin::Root.into(), USDT));
         assert_ok!(Loans::<T>::mint(SystemOrigin::Signed(caller.clone()).into(), USDT, 100_000_000));
         assert_ok!(Loans::<T>::add_reward(SystemOrigin::Signed(caller.clone()).into(), 1_000_000_000_000_u128));
-        assert_ok!(Loans::<T>::update_market_reward_speed(SystemOrigin::Root.into(), USDT, 1_000_000));
+        assert_ok!(Loans::<T>::update_market_reward_speed(SystemOrigin::Root.into(), USDT, 1_000_000, 1_000_000));
         let target_height = frame_system::Pallet::<T>::block_number().saturating_add(One::one());
         frame_system::Pallet::<T>::set_block_number(target_height);
     }: _(SystemOrigin::Signed(caller.clone()), USDT)

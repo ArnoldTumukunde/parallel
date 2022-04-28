@@ -1,22 +1,42 @@
 name: Coverage
 
 on:
-  pull_request:
   push:
     branches:
       - master
+  pull_request:
+    branches:
+      - master
+    types:
+      - synchronize
+      - review_requested
+      - review_request_removed
+      - ready_for_review
+  pull_request_review:
 
 jobs:
+  cancel:
+    name: 'Cancel Previous Runs'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: styfle/cancel-workflow-action@0.9.1
+        with:
+          workflow_id: 7259686,8377401,8911402,9157672,10574645
+          access_token: ${{ github.token }}
   coverage:
-    if: github.repository == 'parallel-finance/parallel'
+    if: ${{ (github.repository == 'parallel-finance/parallel') && ((github.event_name == 'push') || (github.event.review.state == 'approved')) }}
     name: Auto Codecov Coverage
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
-        rust: [nightly-2021-11-07]
+        os: [self-hosted]
+        rust: [nightly-2022-04-24]
 
     steps:
+      - name: cleaning up
+        run: |
+          echo '${{ secrets.RUNNER_PASSWORD }}' | sudo -S chown -R $USER:$USER $GITHUB_WORKSPACE
       - name: Checkout Repository
         uses: actions/checkout@master
 
@@ -68,7 +88,7 @@ jobs:
 
       - name: Generate code coverage
         run: |
-          cargo +nightly-2021-11-07 tarpaulin --verbose --no-fail-fast -p pallet-loans -p pallet-liquid-staking -p pallet-farming -p pallet-prices -p pallet-amm -p pallet-router -p pallet-crowdloans -p pallet-emergency-shutdown --timeout 300 --out Xml
+          cargo +nightly-2022-04-24 tarpaulin --verbose --no-fail-fast -p pallet-loans -p pallet-stableswap -p pallet-liquid-staking -p pallet-farming -p pallet-prices -p pallet-amm -p pallet-router -p pallet-crowdloans -p pallet-emergency-shutdown -p pallet-asset-registry -p pallet-streaming --timeout 300 --out Xml
 
       - name: Upload To Codecov.io
         uses: codecov/codecov-action@v1
