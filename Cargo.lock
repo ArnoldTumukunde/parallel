@@ -158,7 +158,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a3203e79f4dd9bdda415ed03cf14dae5a2bf775c683a00f94e9cd1faf0f596e5"
 dependencies = [
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -278,7 +278,7 @@ dependencies = [
  "memchr",
  "num_cpus",
  "once_cell",
- "pin-project-lite 0.2.8",
+ "pin-project-lite 0.2.9",
  "pin-utils",
  "slab",
  "wasm-bindgen-futures",
@@ -312,7 +312,7 @@ checksum = "ed6aa3524a2dfcf9fe180c51eae2b58738348d819517ceadf95789c51fff7600"
 dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -325,7 +325,7 @@ dependencies = [
  "futures-sink",
  "futures-util",
  "memchr",
- "pin-project-lite 0.2.8",
+ "pin-project-lite 0.2.9",
 ]
 
 [[package]]
@@ -338,7 +338,7 @@ dependencies = [
  "futures-sink",
  "futures-util",
  "memchr",
- "pin-project-lite 0.2.8",
+ "pin-project-lite 0.2.9",
 ]
 
 [[package]]
@@ -382,7 +382,7 @@ dependencies = [
  "futures-core",
  "getrandom 0.2.6",
  "instant",
- "pin-project-lite 0.2.8",
+ "pin-project-lite 0.2.9",
  "rand 0.8.5",
  "tokio",
 ]
@@ -404,9 +404,9 @@ dependencies = [
 
 [[package]]
 name = "base-x"
-version = "0.2.8"
+version = "0.2.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4521f3e3d031370679b3b140beb36dfe4801b09ac77e30c61941f97df3ef28b"
+checksum = "dc19a4937b4fbd3fe3379793130e42060d10627a360f2127802b10b87e7baf74"
 
 [[package]]
 name = "base16ct"
@@ -1100,9 +1100,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.1.10"
+version = "3.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3124f3f75ce09e22d1410043e1e24f2ecc44fad3afe4f08408f1f7663d68da2b"
+checksum = "7c167e37342afc5f33fd87bbc870cedd020d2a6dffa05d45ccd9241fbdd146db"
 dependencies = [
  "atty",
  "bitflags",
@@ -1125,7 +1125,7 @@ dependencies = [
  "proc-macro-error",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -1436,7 +1436,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f877be4f7c9f246b183111634f75baa039715e3f46ce860677d3b19a69fb229c"
 dependencies = [
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -1721,7 +1721,7 @@ dependencies = [
  "proc-macro-crate 1.1.3",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -1998,7 +1998,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a5bbed42daaa95e780b60a50546aa345b8413a1e46f9a40a12907d3598f038db"
 dependencies = [
  "data-encoding",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -2018,7 +2018,7 @@ checksum = "fcc3dd5e9e9c0b295d6e1e4d811fb6f157d5ffd784b8d202fc62eac8035a770b"
 dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -2045,7 +2045,7 @@ dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
  "rustc_version 0.4.0",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -2158,7 +2158,7 @@ checksum = "558e40ea573c374cf53507fd240b7ee2f5477df7cfebdb97323ec61c719399c5"
 dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -2234,7 +2234,7 @@ dependencies = [
  "heck 0.4.0",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -2254,7 +2254,7 @@ checksum = "f58dc3c5e468259f19f2d46304a6b28f1c3d034442e14b322d2b850e36f6d5ae"
 dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -2265,7 +2265,7 @@ checksum = "4e58b112d5099aa0857c5d05f0eacab86406dd8c0f85fe5d320a13256d29ecf4"
 dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -2345,7 +2345,7 @@ dependencies = [
  "fs-err",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -2390,7 +2390,7 @@ dependencies = [
  "proc-macro-crate 1.1.3",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
  "thiserror",
 ]
 
@@ -2569,7 +2569,7 @@ dependencies = [
  "proc-macro-crate 1.1.3",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -2654,7 +2654,7 @@ dependencies = [
  "frame-support-procedural-tools",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -2666,7 +2666,7 @@ dependencies = [
  "proc-macro-crate 1.1.3",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -2676,7 +2676,7 @@ source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.1
 dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -2853,7 +2853,7 @@ dependencies = [
  "futures-io",
  "memchr",
  "parking",
- "pin-project-lite 0.2.8",
+ "pin-project-lite 0.2.9",
  "waker-fn",
 ]
 
@@ -2865,7 +2865,7 @@ checksum = "33c1e13800337f4d4d7a316bf45a567dbcb6ffe087f16424852d97e97a91f512"
 dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -2911,7 +2911,7 @@ dependencies = [
  "futures-sink",
  "futures-task",
  "memchr",
- "pin-project-lite 0.2.8",
+ "pin-project-lite 0.2.9",
  "pin-utils",
  "slab",
 ]
@@ -3125,7 +3125,7 @@ dependencies = [
  "hex-literal",
  "orml-oracle",
  "orml-oracle-rpc-runtime-api",
- "orml-traits",
+ "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.19)",
  "orml-vesting",
  "orml-xcm",
  "orml-xcm-support",
@@ -3265,9 +3265,9 @@ dependencies = [
 
 [[package]]
 name = "http"
-version = "0.2.6"
+version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31f4c6746584866f0feabcc69893c5b51beef3831656a968ed7ae254cdc4fd03"
+checksum = "ff8670570af52249509a86f5e3e18a08c60b177071826898fde8997cf5f6bfbb"
 dependencies = [
  "bytes 1.1.0",
  "fnv",
@@ -3282,14 +3282,14 @@ checksum = "1ff4f84919677303da5f147645dbea6b1881f368d03ac84e1dc09031ebd7b2c6"
 dependencies = [
  "bytes 1.1.0",
  "http",
- "pin-project-lite 0.2.8",
+ "pin-project-lite 0.2.9",
 ]
 
 [[package]]
 name = "httparse"
-version = "1.7.0"
+version = "1.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6330e8a36bd8c859f3fa6d9382911fbb7147ec39807f63b923933a247240b9ba"
+checksum = "496ce29bb5a52785b44e0f7ca2847ae0bb839c9bd28f69acac9b99d461c0c04c"
 
 [[package]]
 name = "httpdate"
@@ -3319,7 +3319,7 @@ dependencies = [
  "httparse",
  "httpdate",
  "itoa 1.0.1",
- "pin-project-lite 0.2.8",
+ "pin-project-lite 0.2.9",
  "socket2 0.4.4",
  "tokio",
  "tower-service",
@@ -3445,7 +3445,7 @@ checksum = "11d7a9f6330b71fea57921c9b61c47ee6e84f72d394754eff6163ae67e7395eb"
 dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -3614,7 +3614,7 @@ dependencies = [
  "proc-macro-crate 0.1.5",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -3781,7 +3781,7 @@ dependencies = [
  "proc-macro-crate 1.1.3",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -3859,7 +3859,7 @@ dependencies = [
  "hex-literal",
  "orml-oracle",
  "orml-oracle-rpc-runtime-api",
- "orml-traits",
+ "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.19)",
  "orml-vesting",
  "orml-xcm",
  "orml-xcm-support",
@@ -4091,9 +4091,9 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "libc"
-version = "0.2.124"
+version = "0.2.125"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21a41fed9d98f27ab1c6d161da622a4fa35e8a54a8adc24bbf3ddd0ef70b0e50"
+checksum = "5916d2ae698f6de9bfb891ad7a8d65c09d232dc58cc4ac433c7da3b2fd84bc2b"
 
 [[package]]
 name = "libloading"
@@ -4517,7 +4517,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "072c290f727d39bdc4e9d6d1c847978693d25a673bd757813681e33e5f6c00c2"
 dependencies = [
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -4659,9 +4659,9 @@ dependencies = [
 
 [[package]]
 name = "libz-sys"
-version = "1.1.5"
+version = "1.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f35facd4a5673cb5a48822be2be1d4236c1c99cb4113cab7061ac720d5bf859"
+checksum = "92e7e15d7610cce1d9752e137625f14e61a28cd45929b6e12e47b50fe154ee2e"
 dependencies = [
  "cc",
  "pkg-config",
@@ -5064,7 +5064,7 @@ dependencies = [
  "proc-macro-error",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
  "synstructure",
 ]
 
@@ -5114,7 +5114,7 @@ checksum = "01fcc0b8149b4632adc89ac3b7b31a12fb6099a0317a4eb2ebff574ef7de7218"
 dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -5326,7 +5326,7 @@ checksum = "a15c83b586f00268c619c1cb3340ec1a6f59dd9ba1d9833a273a68e6d5cd8ffc"
 dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -5351,8 +5351,8 @@ source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git
 dependencies = [
  "frame-support",
  "frame-system",
- "orml-traits",
- "orml-utilities",
+ "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.19)",
+ "orml-utilities 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.19)",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -5390,12 +5390,11 @@ dependencies = [
 [[package]]
 name = "orml-traits"
 version = "0.4.1-dev"
-source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.19#fb171f1f5ae3c28e238e9455e1f5e079dc890fbe"
 dependencies = [
  "frame-support",
  "impl-trait-for-tuples",
  "num-traits",
- "orml-utilities",
+ "orml-utilities 0.4.1-dev",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -5403,6 +5402,39 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "xcm",
+]
+
+[[package]]
+name = "orml-traits"
+version = "0.4.1-dev"
+source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.19#fb171f1f5ae3c28e238e9455e1f5e079dc890fbe"
+dependencies = [
+ "frame-support",
+ "impl-trait-for-tuples",
+ "num-traits",
+ "orml-utilities 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.19)",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+]
+
+[[package]]
+name = "orml-utilities"
+version = "0.4.1-dev"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "serde_json",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -5454,7 +5486,7 @@ version = "0.4.1-dev"
 source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.19#fb171f1f5ae3c28e238e9455e1f5e079dc890fbe"
 dependencies = [
  "frame-support",
- "orml-traits",
+ "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.19)",
  "parity-scale-codec",
  "sp-runtime",
  "sp-std",
@@ -5470,7 +5502,7 @@ dependencies = [
  "cumulus-primitives-core",
  "frame-support",
  "frame-system",
- "orml-traits",
+ "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.19)",
  "orml-xcm-support",
  "parity-scale-codec",
  "scale-info",
@@ -5885,7 +5917,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "kusama-runtime",
- "orml-traits",
+ "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.19)",
  "orml-xcm-support",
  "orml-xtokens",
  "pallet-assets",
@@ -5946,22 +5978,21 @@ dependencies = [
 
 [[package]]
 name = "pallet-distributed-oracle"
-version = "1.8.4"
+version = "0.4.1-dev"
 dependencies = [
- "frame-benchmarking",
  "frame-support",
  "frame-system",
- "orml-oracle",
- "orml-traits",
+ "orml-traits 0.4.1-dev",
+ "orml-utilities 0.4.1-dev",
  "pallet-assets",
  "pallet-balances",
- "pallet-currency-adapter",
  "pallet-prices",
  "pallet-timestamp",
  "parallel-primitives",
  "parity-scale-codec",
  "scale-info",
  "serde",
+ "sp-application-crypto",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -6150,7 +6181,7 @@ dependencies = [
  "frame-system",
  "hex",
  "kusama-runtime",
- "orml-traits",
+ "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.19)",
  "orml-xcm-support",
  "orml-xtokens",
  "pallet-assets",
@@ -6192,7 +6223,7 @@ dependencies = [
  "frame-system",
  "num-traits",
  "orml-oracle",
- "orml-traits",
+ "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.19)",
  "pallet-assets",
  "pallet-balances",
  "pallet-currency-adapter",
@@ -6397,7 +6428,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "orml-oracle",
- "orml-traits",
+ "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.19)",
  "pallet-traits",
  "parallel-primitives",
  "parity-scale-codec",
@@ -6610,7 +6641,7 @@ dependencies = [
  "proc-macro-crate 1.1.3",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -6630,7 +6661,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "orml-oracle",
- "orml-traits",
+ "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.19)",
  "pallet-assets",
  "pallet-balances",
  "pallet-currency-adapter",
@@ -7057,7 +7088,7 @@ dependencies = [
  "hex-literal",
  "orml-oracle",
  "orml-oracle-rpc-runtime-api",
- "orml-traits",
+ "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.19)",
  "orml-vesting",
  "orml-xcm",
  "orml-xcm-support",
@@ -7168,7 +7199,7 @@ dependencies = [
  "proc-macro-crate 1.1.3",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -7214,7 +7245,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f557c32c6d268a07c921471619c0295f5efad3a0e76d4f97a05c091a51d110b2"
 dependencies = [
  "proc-macro2 1.0.37",
- "syn 1.0.91",
+ "syn 1.0.92",
  "synstructure",
 ]
 
@@ -7376,7 +7407,7 @@ dependencies = [
  "pest_meta",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -7426,7 +7457,7 @@ checksum = "044964427019eed9d49d9d5bbce6047ef18f37100ea400912a9fa4a3523ab12a"
 dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -7437,7 +7468,7 @@ checksum = "744b6f092ba29c3650faf274db506afd39944f48420f6c86b17cfe0ee1cb36bb"
 dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -7448,9 +7479,9 @@ checksum = "257b64915a082f7811703966789728173279bdebb956b143dbcd23f6f970a777"
 
 [[package]]
 name = "pin-project-lite"
-version = "0.2.8"
+version = "0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e280fbe77cc62c91527259e9442153f4688736748d24660126286329742b4c6c"
+checksum = "e0a7ae3ac2f1173085d398531c705756c94a4c56843785df85a60c1a0afac116"
 
 [[package]]
 name = "pin-utils"
@@ -8179,7 +8210,7 @@ dependencies = [
  "proc-macro-crate 1.1.3",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -8690,7 +8721,7 @@ dependencies = [
  "proc-macro-error-attr",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
  "version_check",
 ]
 
@@ -8777,7 +8808,7 @@ dependencies = [
  "itertools",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -9002,22 +9033,22 @@ dependencies = [
 
 [[package]]
 name = "ref-cast"
-version = "1.0.6"
+version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "300f2a835d808734ee295d45007adacb9ebb29dd3ae2424acfa17930cae541da"
+checksum = "685d58625b6c2b83e4cc88a27c4bf65adb7b6b16dbdc413e515c9405b47432ab"
 dependencies = [
  "ref-cast-impl",
 ]
 
 [[package]]
 name = "ref-cast-impl"
-version = "1.0.6"
+version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4c38e3aecd2b21cb3959637b883bb3714bc7e43f0268b9a29d3743ee3e55cdd2"
+checksum = "a043824e29c94169374ac5183ac0ed43f5724dc4556b19568007486bd840fa1f"
 dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -9257,7 +9288,7 @@ dependencies = [
  "kusama-runtime",
  "log",
  "orml-oracle",
- "orml-traits",
+ "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.19)",
  "orml-vesting",
  "orml-xcm",
  "orml-xcm-support",
@@ -9565,7 +9596,7 @@ dependencies = [
  "proc-macro-crate 1.1.3",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -10348,7 +10379,7 @@ dependencies = [
  "proc-macro-crate 1.1.3",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -10427,7 +10458,7 @@ dependencies = [
  "proc-macro-crate 1.1.3",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -10621,7 +10652,7 @@ checksum = "08597e7152fcd306f41838ed3e37be9eaeed2b61c42e2117266a554fab4662f9"
 dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -10902,7 +10933,7 @@ dependencies = [
  "proc-macro-crate 1.1.3",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -11142,7 +11173,7 @@ dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
  "sp-core-hashing",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -11161,7 +11192,7 @@ source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.1
 dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -11361,7 +11392,7 @@ dependencies = [
  "proc-macro-crate 1.1.3",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -11545,7 +11576,7 @@ dependencies = [
  "parity-scale-codec",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -11754,7 +11785,7 @@ dependencies = [
  "memchr",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -11804,7 +11835,7 @@ dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
  "rustversion",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -11817,7 +11848,7 @@ dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
  "rustversion",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -11934,9 +11965,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "1.0.91"
+version = "1.0.92"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b683b2b825c8eef438b77c36a06dc262294da3d5a5813fac20da149241dcd44d"
+checksum = "7ff7c592601f11445996a06f8ad0c27f094a58857c2f89e97974ab9235b92c52"
 dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
@@ -11951,7 +11982,7 @@ checksum = "f36bdaa60a83aca3921b5259d5400cbf5e90fc51931376a9bd4a0eb79aa7210f"
 dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
  "unicode-xid 0.2.2",
 ]
 
@@ -12013,7 +12044,7 @@ checksum = "aa32fd3f627f367fe16f893e2597ae3c05020f8bba2666a4e6ea73d377e5714b"
 dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -12096,9 +12127,9 @@ dependencies = [
 
 [[package]]
 name = "tinyvec"
-version = "1.5.1"
+version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c1c1d5a42b6245520c249549ec267180beaffcc0615401ac8e31853d4b6d8d2"
+checksum = "87cc5ceb3875bb20c2890005a4e226a4651264a5c75edb2421b52861a0a0cb50"
 dependencies = [
  "tinyvec_macros",
 ]
@@ -12111,9 +12142,9 @@ checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
 
 [[package]]
 name = "tokio"
-version = "1.17.0"
+version = "1.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2af73ac49756f3f7c01172e34a23e5d0216f6c32333757c2c61feb2bbff5a5ee"
+checksum = "0f48b6d60512a392e34dbf7fd456249fd2de3c83669ab642e021903f4015185b"
 dependencies = [
  "bytes 1.1.0",
  "libc",
@@ -12122,7 +12153,7 @@ dependencies = [
  "num_cpus",
  "once_cell",
  "parking_lot 0.12.0",
- "pin-project-lite 0.2.8",
+ "pin-project-lite 0.2.9",
  "signal-hook-registry",
  "socket2 0.4.4",
  "tokio-macros",
@@ -12137,7 +12168,7 @@ checksum = "b557f72f448c511a979e2564e55d74e6c4432fc96ff4f6241bc6bded342643b7"
 dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -12169,7 +12200,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "50145484efff8818b5ccd256697f36863f587da82cf8b409c53adf1e840798e3"
 dependencies = [
  "futures-core",
- "pin-project-lite 0.2.8",
+ "pin-project-lite 0.2.9",
  "tokio",
 ]
 
@@ -12183,7 +12214,7 @@ dependencies = [
  "futures-core",
  "futures-sink",
  "log",
- "pin-project-lite 0.2.8",
+ "pin-project-lite 0.2.9",
  "tokio",
 ]
 
@@ -12197,7 +12228,7 @@ dependencies = [
  "futures-core",
  "futures-io",
  "futures-sink",
- "pin-project-lite 0.2.8",
+ "pin-project-lite 0.2.9",
  "tokio",
  "tracing",
 ]
@@ -12224,20 +12255,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d0ecdcb44a79f0fe9844f0c4f33a342cbcbb5117de8001e6ba0dc2351327d09"
 dependencies = [
  "cfg-if 1.0.0",
- "pin-project-lite 0.2.8",
+ "pin-project-lite 0.2.9",
  "tracing-attributes",
  "tracing-core",
 ]
 
 [[package]]
 name = "tracing-attributes"
-version = "0.1.20"
+version = "0.1.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e65ce065b4b5c53e73bb28912318cb8c9e9ad3921f1d669eb0e68b4c8143a2b"
+checksum = "cc6b8ad3567499f98a1db7a752b07a7c8c7c7c34c332ec00effb2b0027974b7c"
 dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -12280,7 +12311,7 @@ dependencies = [
  "proc-macro-crate 1.1.3",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -12476,9 +12507,9 @@ dependencies = [
 
 [[package]]
 name = "unicode-bidi"
-version = "0.3.7"
+version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a01404663e3db436ed2746d9fefef640d868edae3cceb81c3b8d5732fda678f"
+checksum = "099b7128301d285f79ddd55b9a83d5e6b9e97c92e0ea0daebee7263e932de992"
 
 [[package]]
 name = "unicode-normalization"
@@ -12614,7 +12645,7 @@ dependencies = [
  "hex-literal",
  "orml-oracle",
  "orml-oracle-rpc-runtime-api",
- "orml-traits",
+ "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.19)",
  "orml-vesting",
  "orml-xcm",
  "orml-xcm-support",
@@ -12768,7 +12799,7 @@ dependencies = [
  "log",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
  "wasm-bindgen-shared",
 ]
 
@@ -12802,7 +12833,7 @@ checksum = "99ec0dc7a4756fffc231aab1b9f2f578d23cd391390ab27f952ae0c9b3ece20b"
 dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
  "wasm-bindgen-backend",
  "wasm-bindgen-shared",
 ]
@@ -13411,7 +13442,7 @@ dependencies = [
  "Inflector",
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
 ]
 
 [[package]]
@@ -13462,7 +13493,7 @@ checksum = "3f8f187641dad4f680d25c4bfc4225b418165984179f26ca76ec4fb6441d3a17"
 dependencies = [
  "proc-macro2 1.0.37",
  "quote 1.0.18",
- "syn 1.0.91",
+ "syn 1.0.92",
  "synstructure",
 ]
 
