@@ -69,6 +69,7 @@ pub use weights::WeightInfo;
 pub mod pallet {
     use super::*;
     use crate::helpers::{Coffer, OracleDeposit, Relayer, Repeater};
+    use frame_support::fail;
     use sp_runtime::traits::Zero;
     use sp_runtime::ArithmeticError;
 
@@ -114,6 +115,10 @@ pub mod pallet {
         /// Allowed staking currency
         #[pallet::constant]
         type StakingCurrency: Get<AssetIdOf<Self>>;
+
+        /// Allowed staking currency
+        #[pallet::constant]
+        type SlashPercentage: Get<u32>;
     }
 
     #[pallet::error]
@@ -160,8 +165,12 @@ pub mod pallet {
 
         /// No rounds yet, but someone called the manager ?
         NoRoundsStartedYet,
+
         /// Staked Amount Is Less than Min Stake Amount
         StakedAmountIsLessThanMinStakeAmount,
+
+        /// Repeater Is Slashed For Submitting Unacceptable Price
+        RepeaterIsSlashedForSubmittingUnacceptablePrice,
     }
 
     #[pallet::event]
@@ -226,6 +235,11 @@ pub mod pallet {
     #[pallet::getter(fn emergency_price)]
     pub type EmergencyPrice<T: Config> =
         StorageMap<_, Twox64Concat, CurrencyId, Price, OptionQuery>;
+
+    /// Mapping from currency id to it's emergency price
+    #[pallet::storage]
+    #[pallet::getter(fn mean_price)]
+    pub type MeanPrice<T: Config> = StorageMap<_, Twox64Concat, CurrencyId, Price, OptionQuery>;
 
     #[pallet::pallet]
     #[pallet::without_storage_info]
@@ -523,6 +537,10 @@ pub mod pallet {
                     > T::MinUnstake::get(),
                 Error::<T>::StakedAmountIsLessThanMinStakeAmount
             );
+            if Self::slash_repeater(&asset_id, &price) {
+                //slash the repeater
+                fail!(Error::<T>::RepeaterIsSlashedForSubmittingUnacceptablePrice);
+            }
             <Pallet<T> as EmergencyPriceFeeder<CurrencyId, Price>>::set_emergency_price(
                 asset_id, price,
             );
@@ -572,6 +590,16 @@ impl<T: Config> Pallet<T> {
     fn get_asset_mantissa(asset_id: &CurrencyId) -> Option<u128> {
         let decimal = T::Decimal::get_decimal(asset_id)?;
         10u128.checked_pow(decimal as u32)
+    }
+
+    fn slash_repeater(asset_id: &CurrencyId, price: &Price) -> bool {
+        let m_price = MeanPrice::<T>::get(asset_id).unwrap().to_float();
+        let p = m_price * T::SlashPercentage::get() as f64 / 100 as f64;
+        if price.to_float() > m_price - p && price.to_float() < m_price + p {
+            false
+        } else {
+            true
+        }
     }
 }
 
