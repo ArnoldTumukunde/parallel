@@ -73,7 +73,7 @@ export const createXcm = (encoded: string, sovereignAccount: string) => {
               }
             },
             fun: {
-              Fungible: '500000000000'
+              Fungible: '2500000000'
             }
           }
         ]
@@ -88,7 +88,7 @@ export const createXcm = (encoded: string, sovereignAccount: string) => {
               }
             },
             fun: {
-              Fungible: '500000000000'
+              Fungible: '2500000000'
             }
           },
           weightLimit: 'Unlimited'
@@ -97,7 +97,7 @@ export const createXcm = (encoded: string, sovereignAccount: string) => {
       {
         Transact: {
           originType: 'Native',
-          requireWeightAtMost: '2000000000',
+          requireWeightAtMost: '3000000000',
           call: {
             encoded
           }
