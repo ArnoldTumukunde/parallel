@@ -30,13 +30,13 @@ mod tests;
 pub mod migrations;
 pub mod types;
 pub mod weights;
-
 pub use pallet::*;
+pub use weights::WeightInfo;
 
 #[frame_support::pallet]
 pub mod pallet {
-    use crate::{types::*, weights::WeightInfo};
-
+    use super::*;
+    use crate::types::*;
     use frame_support::{
         dispatch::DispatchResult,
         error::BadOrigin,
@@ -550,7 +550,7 @@ pub mod pallet {
                 &who,
                 &Self::account_id(),
                 amount,
-                true,
+                false,
             )?;
 
             if vault.phase == VaultPhase::Contributing {
@@ -984,7 +984,7 @@ pub mod pallet {
                             &Self::account_id(),
                             &who,
                             amount,
-                            true,
+                            false,
                         )?;
                     }
 
@@ -1258,7 +1258,7 @@ pub mod pallet {
                         &Self::account_id(),
                         &who,
                         amount,
-                        true,
+                        false,
                     )?;
 
                     Self::do_update_contribution(

@@ -26,7 +26,7 @@ use frame_support::{
         fungibles::{InspectMetadata, Mutate},
         tokens::BalanceConversion,
         ChangeMembers, Contains, EnsureOneOf, EqualPrivilegeOnly, Everything, InstanceFilter,
-        Nothing, OnRuntimeUpgrade,
+        Nothing,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -148,10 +148,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("parallel"),
     impl_name: create_runtime_str!("parallel"),
     authoring_version: 1,
-    spec_version: 184,
-    impl_version: 29,
+    spec_version: 185,
+    impl_version: 30,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 13,
+    transaction_version: 14,
     state_version: 0,
 };
 
@@ -253,6 +253,7 @@ impl Contains<Call> for WhiteListFilter {
             Call::Proxy(_) |
             Call::Identity(_) |
             Call::EmergencyShutdown(_) |
+            Call::XcmHelper(_) |
             // 3rd Party
             Call::Vesting(_) |
             Call::Oracle(_) |
@@ -570,7 +571,7 @@ impl pallet_loans::Config for Runtime {
     type PriceFeeder = Prices;
     type ReserveOrigin = EnsureRootOrMoreThanHalfGeneralCouncil;
     type UpdateOrigin = EnsureRootOrMoreThanHalfGeneralCouncil;
-    type WeightInfo = pallet_loans::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_loans::WeightInfo<Runtime>;
     type UnixTime = Timestamp;
     type Assets = CurrencyAdapter;
     type RewardAssetId = RewardAssetId;
@@ -595,7 +596,7 @@ impl pallet_liquid_staking::Config for Runtime {
     type Origin = Origin;
     type Call = Call;
     type PalletId = StakingPalletId;
-    type WeightInfo = ();
+    type WeightInfo = weights::pallet_liquid_staking::WeightInfo<Runtime>;
     type SelfParaId = ParachainInfo;
     type Assets = Assets;
     type RelayOrigin = EnsureRootOrMoreThanHalfGeneralCouncil;
@@ -1277,7 +1278,7 @@ impl pallet_asset_registry::Config for Runtime {
     type AssetId = CurrencyId;
     type AssetType = AssetType;
     type UpdateOrigin = EnsureRootOrMoreThanHalfGeneralCouncil;
-    type WeightInfo = pallet_asset_registry::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_asset_registry::WeightInfo<Runtime>;
 }
 
 parameter_types! {
@@ -1674,7 +1675,7 @@ impl pallet_bridge::Config for Runtime {
     type ExistentialDeposit = ExistentialDeposit;
     type ProposalLifetime = ProposalLifetime;
     type ThresholdPercentage = ThresholdPercentage;
-    type WeightInfo = pallet_bridge::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_bridge::WeightInfo<Runtime>;
 }
 
 parameter_types! {
@@ -1706,7 +1707,7 @@ impl pallet_amm::Config for Runtime {
     type PalletId = AMMPalletId;
     type LockAccountId = OneAccount;
     type CreatePoolOrigin = EnsureRootOrMoreThanHalfGeneralCouncil;
-    type AMMWeightInfo = pallet_amm::weights::SubstrateWeight<Runtime>;
+    type AMMWeightInfo = weights::pallet_amm::WeightInfo<Runtime>;
     type LpFee = DefaultLpFee;
     type ProtocolFee = DefaultProtocolFee;
     type MinimumLiquidity = MinimumLiquidity;
@@ -1765,7 +1766,7 @@ impl pallet_crowdloans::Config for Runtime {
     type OpenCloseOrigin = EnsureRootOrMoreThanHalfGeneralCouncil;
     type AuctionSucceededFailedOrigin = EnsureRootOrMoreThanHalfGeneralCouncil;
     type SlotExpiredOrigin = EnsureRootOrMoreThanHalfGeneralCouncil;
-    type WeightInfo = pallet_crowdloans::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_crowdloans::WeightInfo<Runtime>;
     type XCM = XcmHelper;
     type RelayChainBlockNumberProvider = RelayChainValidationDataProvider<Runtime>;
     type Members = CrowdloansAutomatorsMembership;
@@ -1773,14 +1774,19 @@ impl pallet_crowdloans::Config for Runtime {
 
 parameter_types! {
     pub const StreamPalletId: PalletId = PalletId(*b"par/strm");
+    pub const MaxStreamsCount: u32 = 128;
+    pub const MaxFinishedStreamsCount: u32 = 10;
 }
 
 impl pallet_streaming::Config for Runtime {
     type Event = Event;
     type Assets = CurrencyAdapter;
     type PalletId = StreamPalletId;
+    type MaxStreamsCount = MaxStreamsCount;
+    type MaxFinishedStreamsCount = MaxFinishedStreamsCount;
     type UnixTime = Timestamp;
-    type WeightInfo = pallet_streaming::weights::SubstrateWeight<Runtime>;
+    type UpdateOrigin = EnsureRootOrMoreThanHalfGeneralCouncil;
+    type WeightInfo = weights::pallet_streaming::WeightInfo<Runtime>;
 }
 
 parameter_types! {
@@ -1800,7 +1806,7 @@ impl pallet_xcm_helper::Config for Runtime {
     type RefundLocation = RefundLocation;
     type BlockNumberProvider = frame_system::Pallet<Runtime>;
     type XcmOrigin = EnsureRootOrMoreThanHalfGeneralCouncil;
-    type WeightInfo = pallet_xcm_helper::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_xcm_helper::WeightInfo<Runtime>;
     type RelayCurrency = RelayCurrency;
 }
 
@@ -1813,7 +1819,7 @@ impl pallet_router::Config for Runtime {
     type Event = Event;
     type PalletId = RouterPalletId;
     type AMM = AMM;
-    type AMMRouterWeightInfo = pallet_router::weights::SubstrateWeight<Runtime>;
+    type AMMRouterWeightInfo = weights::pallet_router::WeightInfo<Runtime>;
     type MaxLengthRoute = MaxLengthRoute;
     type Assets = CurrencyAdapter;
 }
@@ -1822,6 +1828,7 @@ impl pallet_currency_adapter::Config for Runtime {
     type Assets = Assets;
     type Balances = Balances;
     type GetNativeCurrencyId = NativeCurrencyId;
+    type LockOrigin = EnsureRootOrMoreThanHalfGeneralCouncil;
 }
 
 parameter_types! {
@@ -1836,7 +1843,7 @@ impl pallet_farming::Config for Runtime {
     type Assets = CurrencyAdapter;
     type PalletId = FarmingPalletId;
     type UpdateOrigin = EnsureRootOrMoreThanHalfGeneralCouncil;
-    type WeightInfo = pallet_farming::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_farming::WeightInfo<Runtime>;
     type MaxUserLockItemsCount = MaxUserLockItemsCount;
     type LockPoolMaxDuration = LockPoolMaxDuration;
     type CoolDownMaxDuration = CoolDownMaxDuration;
@@ -1965,66 +1972,8 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (
-        CrowdloansMigrationV2,
-        LiquidStakingMigrationV3,
-        MoneyMarketMigrationV3,
-    ),
+    (),
 >;
-
-pub struct MoneyMarketMigrationV3;
-impl OnRuntimeUpgrade for MoneyMarketMigrationV3 {
-    fn on_runtime_upgrade() -> frame_support::weights::Weight {
-        pallet_loans::migrations::v3::migrate::<Runtime>()
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
-        pallet_loans::migrations::v3::pre_migrate::<Runtime>()
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
-        pallet_loans::migrations::v3::post_migrate::<Runtime>()
-    }
-}
-
-// Migration for liquid staking pallet to add multiple ledgers support
-pub struct LiquidStakingMigrationV3;
-
-impl OnRuntimeUpgrade for LiquidStakingMigrationV3 {
-    fn on_runtime_upgrade() -> frame_support::weights::Weight {
-        pallet_liquid_staking::migrations::v3::migrate::<Runtime>()
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
-        pallet_liquid_staking::migrations::v3::pre_migrate::<Runtime>()
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
-        pallet_liquid_staking::migrations::v3::post_migrate::<Runtime>()
-    }
-}
-
-pub struct CrowdloansMigrationV2;
-
-impl OnRuntimeUpgrade for CrowdloansMigrationV2 {
-    fn on_runtime_upgrade() -> frame_support::weights::Weight {
-        pallet_crowdloans::migrations::v2::migrate::<Runtime>()
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
-        pallet_crowdloans::migrations::v2::pre_migrate::<Runtime>()
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
-        pallet_crowdloans::migrations::v2::post_migrate::<Runtime>()
-    }
-}
 
 impl_runtime_apis! {
     impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
@@ -2203,6 +2152,8 @@ impl_runtime_apis! {
             list_benchmark!(list, extra, pallet_crowdloans, Crowdloans);
             list_benchmark!(list, extra, pallet_xcm_helper, XcmHelper);
             list_benchmark!(list, extra, pallet_farming, Farming);
+            list_benchmark!(list, extra, pallet_asset_registry, AssetRegistry);
+            list_benchmark!(list, extra, pallet_streaming, Streaming);
 
             let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -2249,6 +2200,8 @@ impl_runtime_apis! {
             add_benchmark!(params, batches, pallet_crowdloans, Crowdloans);
             add_benchmark!(params, batches, pallet_xcm_helper, XcmHelper);
             add_benchmark!(params, batches, pallet_farming, Farming);
+            add_benchmark!(params, batches, pallet_asset_registry, AssetRegistry);
+            add_benchmark!(params, batches, pallet_streaming, Streaming);
 
             if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
             Ok(batches)
