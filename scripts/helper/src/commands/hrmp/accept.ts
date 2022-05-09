@@ -11,10 +11,10 @@ export default function ({ createCommand }: CreateCommandParameters): Command {
       validator: program.NUMBER
     })
     .option('-r, --relay-ws [url]', 'the relaychain API endpoint', {
-      default: 'wss://kusama-rpc.parallel.fi'
+      default: 'wss://polkadot-rpc.parallel.fi'
     })
     .option('-p, --para-ws [url]', 'the parachain API endpoint', {
-      default: 'wss://heiko-rpc.parallel.fi'
+      default: 'wss://rpc.parallel.fi'
     })
     .action(async actionParameters => {
       const {
