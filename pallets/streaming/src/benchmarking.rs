@@ -56,9 +56,9 @@ benchmarks! {
         let deposit_amount: u128 = dollar(5);
         let start_time: u64 = 6;
         let end_time: u64 = 18;
-    }: _(SystemOrigin::Signed(caller.clone()), recipient.clone(), deposit_amount, KSM, start_time, end_time)
+    }: _(SystemOrigin::Signed(caller.clone()), recipient.clone(), deposit_amount, KSM, start_time, end_time, true)
     verify {
-        assert_last_event::<T>(Event::StreamCreated(0, caller, recipient, deposit_amount, KSM, start_time, end_time).into())
+        assert_last_event::<T>(Event::StreamCreated(0, caller, recipient, deposit_amount, KSM, start_time, end_time, true).into())
     }
 
     cancel {
@@ -68,11 +68,11 @@ benchmarks! {
         let deposit_amount: u128 = dollar(5);
         let start_time: u64 = 6;
         let end_time: u64 = 18;
-        assert_ok!(Streaming::<T>::create(SystemOrigin::Signed(caller.clone()).into(), recipient.clone(), deposit_amount, KSM, start_time, end_time));
+        assert_ok!(Streaming::<T>::create(SystemOrigin::Signed(caller.clone()).into(), recipient.clone(), deposit_amount, KSM, start_time, end_time, true));
         let stream_id: u128 = 0;
     }: _(SystemOrigin::Signed(caller.clone()), stream_id)
     verify {
-        assert_last_event::<T>(Event::StreamCanceled(stream_id, caller, recipient, KSM, deposit_amount, 0).into())
+        assert_last_event::<T>(Event::StreamCancelled(stream_id, caller, recipient, KSM, deposit_amount, 0).into())
     }
 
     withdraw {
@@ -83,7 +83,7 @@ benchmarks! {
         let deposit_amount: u128 = dollar(5);
         let start_time: u64 = 6;
         let end_time: u64 = 18;
-        assert_ok!(Streaming::<T>::create(SystemOrigin::Signed(caller).into(), recipient.clone(), deposit_amount, KSM, start_time, end_time));
+        assert_ok!(Streaming::<T>::create(SystemOrigin::Signed(caller).into(), recipient.clone(), deposit_amount, KSM, start_time, end_time, true));
         pallet_timestamp::Pallet::<T>::set_timestamp(18000);
 
         let stream_id: u128 = 0;

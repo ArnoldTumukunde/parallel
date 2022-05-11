@@ -20,7 +20,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use crate::types::{Stream, StreamKind, StreamStatus};
+use crate::types::{Stream, StreamKind};
 use frame_support::{
     pallet_prelude::*,
     traits::{
@@ -113,6 +113,8 @@ pub mod pallet {
         NotTheSender,
         /// Caller is not the stream recipient
         NotTheRecipient,
+        /// Stream cannot be cancelled
+        CannotBeCancelled,
         /// Amount exceeds balance
         InsufficientStreamBalance,
         /// Excess max streams count
@@ -125,7 +127,7 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
     pub enum Event<T: Config> {
         /// Creates a payment stream.
-        /// \[stream_id, sender, recipient, deposit, asset_id, start_time, end_time\]
+        /// \[stream_id, sender, recipient, deposit, asset_id, start_time, end_time, cancellable\]
         StreamCreated(
             StreamId,
             AccountOf<T>,
@@ -134,13 +136,14 @@ pub mod pallet {
             AssetIdOf<T>,
             Timestamp,
             Timestamp,
+            bool,
         ),
         /// Withdraw payment from stream.
         /// \[stream_id, recipient, asset_id, amount\]
         StreamWithdrawn(StreamId, AccountOf<T>, AssetIdOf<T>, BalanceOf<T>),
         /// Cancel an existing stream.
         /// \[stream_id, sender, recipient, sender_balance, recipient_balance]
-        StreamCanceled(
+        StreamCancelled(
             StreamId,
             AccountOf<T>,
             AccountOf<T>,
@@ -209,6 +212,7 @@ pub mod pallet {
             asset_id: AssetIdOf<T>,
             start_time: Timestamp,
             end_time: Timestamp,
+            cancellable: bool,
         ) -> DispatchResultWithPostInfo {
             let sender = ensure_signed(origin)?;
             ensure!(sender != recipient, Error::<T>::RecipientIsAlsoSender);
@@ -237,6 +241,7 @@ pub mod pallet {
                 recipient.clone(),
                 start_time,
                 end_time,
+                cancellable,
             );
 
             let stream_id = NextStreamId::<T>::get();
@@ -256,7 +261,7 @@ pub mod pallet {
             Self::try_push_stream_library(&recipient, StreamKind::Receive, stream_id)?;
 
             Self::deposit_event(Event::<T>::StreamCreated(
-                stream_id, sender, recipient, deposit, asset_id, start_time, end_time,
+                stream_id, sender, recipient, deposit, asset_id, start_time, end_time, true,
             ));
             Ok(().into())
         }
@@ -273,6 +278,7 @@ pub mod pallet {
 
             let mut stream = Streams::<T>::get(stream_id).ok_or(Error::<T>::InvalidStreamId)?;
             ensure!(stream.is_sender(&sender), Error::<T>::NotTheSender);
+            ensure!(stream.cancellable, Error::<T>::CannotBeCancelled);
 
             // calculate the balance to return
             let sender_balance = stream.sender_balance()?;
@@ -294,14 +300,13 @@ pub mod pallet {
                 false,
             )?;
 
-            // Will keep remaining_balance in the stream
-            stream.status = StreamStatus::Cancelled;
+            stream.try_cancel(sender_balance)?;
+            Streams::<T>::insert(stream_id, stream.clone());
+
             Self::try_push_stream_library(&stream.sender, StreamKind::Finish, stream_id)?;
             Self::try_push_stream_library(&stream.recipient, StreamKind::Finish, stream_id)?;
 
-            Streams::<T>::insert(stream_id, stream.clone());
-
-            Self::deposit_event(Event::<T>::StreamCanceled(
+            Self::deposit_event(Event::<T>::StreamCancelled(
                 stream_id,
                 sender,
                 stream.recipient,
