@@ -143,10 +143,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("heiko"),
     impl_name: create_runtime_str!("heiko"),
     authoring_version: 1,
-    spec_version: 185,
-    impl_version: 30,
+    spec_version: 186,
+    impl_version: 31,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 14,
+    transaction_version: 15,
     state_version: 0,
 };
 
@@ -222,7 +222,7 @@ impl Contains<Call> for WhiteListFilter {
             Call::Assets(pallet_assets::Call::force_set_metadata { .. }) |
             Call::Assets(pallet_assets::Call::force_asset_status { .. }) |
             // Governance
-            // Call::Sudo(_) |
+            Call::Sudo(_) |
             Call::Democracy(_) |
             Call::GeneralCouncil(_) |
             Call::TechnicalCommittee(_) |
