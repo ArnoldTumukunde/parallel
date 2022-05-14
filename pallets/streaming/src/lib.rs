@@ -144,7 +144,7 @@ pub mod pallet {
         /// \[stream_id, recipient, asset_id, amount\]
         StreamWithdrawn(StreamId, AccountOf<T>, AssetIdOf<T>, BalanceOf<T>),
         /// Cancel an existing stream.
-        /// \[stream_id, sender, recipient, sender_balance, recipient_balance]
+        /// \[stream_id, sender, recipient, asset_id, sender_balance, recipient_balance]
         StreamCancelled(
             StreamId,
             AccountOf<T>,
@@ -279,6 +279,7 @@ pub mod pallet {
 
             let mut stream = Streams::<T>::get(stream_id).ok_or(Error::<T>::InvalidStreamId)?;
             ensure!(stream.is_sender(&sender), Error::<T>::NotTheSender);
+            ensure!(!stream.has_finished(), Error::<T>::HasFinished);
             ensure!(stream.cancellable, Error::<T>::CannotBeCancelled);
 
             // calculate the balance to return
@@ -456,8 +457,10 @@ impl<T: Config> Pallet<T> {
         let checked_push =
             |registry: &mut Option<BoundedVec<StreamId, T::MaxStreamsCount>>| -> DispatchResult {
                 let mut r = registry.take().unwrap_or_default();
-                r.try_push(stream_id)
-                    .map_err(|_| Error::<T>::ExcessMaxStreamsCount)?;
+                if !r.to_vec().iter().any(|&x| x == stream_id) {
+                    r.try_push(stream_id)
+                        .map_err(|_| Error::<T>::ExcessMaxStreamsCount)?;
+                }
 
                 r.as_mut().sort_unstable_by(|a, b| b.cmp(a));
                 *registry = Some(r);

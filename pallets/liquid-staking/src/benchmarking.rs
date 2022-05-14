@@ -283,6 +283,7 @@ benchmarks! {
         LiquidStaking::<T>::unstake(SystemOrigin::Signed(alice.clone()).into(), UNSTAKE_AMOUNT).unwrap();
         assert_ok!(with_transaction(|| -> TransactionOutcome<DispatchResult>{
             LiquidStaking::<T>::do_advance_era(T::BondingDuration::get() + 1).unwrap();
+            LiquidStaking::<T>::do_matching().unwrap();
             TransactionOutcome::Commit(Ok(()))
         }));
         LiquidStaking::<T>::notification_received(
@@ -330,6 +331,7 @@ benchmarks! {
         LiquidStaking::<T>::stake(SystemOrigin::Signed(alice).into(), STAKE_AMOUNT).unwrap();
     }: {
         assert_ok!(with_transaction(|| -> TransactionOutcome<DispatchResult> {
+            LiquidStaking::<T>::do_matching().unwrap();
             LiquidStaking::<T>::do_advance_era(1).unwrap();
             TransactionOutcome::Commit(Ok(()))
         }));
@@ -376,6 +378,16 @@ benchmarks! {
         let reserve = ReserveFactor::<T>::get().mul_floor(STAKE_AMOUNT) - reduce_amount;
         assert_eq!(TotalReserves::<T>::get(), reserve);
         assert_last_event::<T>(Event::<T>::ReservesReduced(alice, reduce_amount).into());
+    }
+
+    cancel_unstake {
+        let alice: T::AccountId = account("Sample", 100, SEED);
+        initial_set_up::<T>(alice.clone());
+        LiquidStaking::<T>::stake(SystemOrigin::Signed(alice.clone()).into(), STAKE_AMOUNT).unwrap();
+        LiquidStaking::<T>::unstake(SystemOrigin::Signed(alice.clone()).into(), UNSTAKE_AMOUNT).unwrap();
+    }: _(SystemOrigin::Signed(alice.clone()), UNSTAKE_AMOUNT)
+    verify {
+        assert_last_event::<T>(Event::<T>::UnstakeCancelled(alice, UNSTAKE_AMOUNT, UNSTAKE_AMOUNT).into());
     }
 }
 
